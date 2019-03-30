@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <string.h> 
 
-#define TAM 80
+#define TAM 1024
 #define NUMERO_CLIENTES 5
 
 struct usuario
@@ -17,6 +17,9 @@ struct usuario
 void error_lectura(int);
 void error_escritura(int);
 int autenticacion (int newsockfd);
+void update(int newsockfd);
+void scanning(int newsockfd);
+void telemetria(int newsockfd);
 
 int main(int argc, char *argv[]) {
 
@@ -32,7 +35,7 @@ int main(int argc, char *argv[]) {
 	strcpy(usuarios[4].user,"floki");
 	strcpy(usuarios[4].pass,"13579");
 	
-	int sockfd, newsockfd, servlen, pid;
+	int sockfd, newsockfd, servlen, pid,n;
 	unsigned int clilen;
 	struct sockaddr_un  cli_addr, serv_addr;
 	char buffer[TAM];
@@ -94,9 +97,41 @@ int main(int argc, char *argv[]) {
 			memset(buffer,0,TAM);
 			if(autenticacion(newsockfd)==1)
 			{
-				printf("ANDUVO");
-				fflush(stdout);
-				while(1){}
+				int flag=1;
+				while(flag)
+				{
+					memset(buffer, '\0', TAM );
+					n = read( newsockfd, buffer, TAM);
+					error_lectura(n);
+					strtok(buffer,"\n");		//Espera instrucciones del cliente
+					
+					if(strcmp(buffer,"update")==0)
+					{	
+						update(newsockfd);
+					}
+					else if(strcmp(buffer,"scanning")==0)
+					{
+						scanning(newsockfd);
+					}
+					else if(strcmp(buffer,"telemetria")==0)
+					{
+						telemetria(newsockfd);
+					}
+					else if(strcmp(buffer,"fin")==0)
+					{
+						n = write( newsockfd, "fin", TAM);
+						error_escritura(n);
+						printf("Fin de la conexion con cliente");
+						fflush(stdout);
+						exit(0);
+					}
+					else
+					{
+						n = write( newsockfd, "no existe funcion", TAM);
+						error_escritura(n);
+					}
+				}	
+				
 			}
 
 			else
@@ -161,8 +196,6 @@ int autenticacion (int newsockfd)
 			
 			if(strcmp(aux_user,usuarios[i].user)==0)
 			{
-				printf("Usuario valido\n");
-				fflush(stdout);
 				validez_user=1;
 				aux_i=i;
 			}
@@ -216,4 +249,52 @@ int autenticacion (int newsockfd)
 	n = write(newsockfd, "fin", 5);
 	error_escritura(n);
 	return 0;
+}
+
+void update(int newsockfd)
+{
+	int n;
+	char buffer[TAM];
+	n = write( newsockfd, "update", TAM);
+	error_escritura(n);
+
+	FILE *fp =fopen("firmware","r"); //Abro un archivo en modo binario para lectura
+	if (fp==NULL) {fputs ("File error",stderr); exit (1);} //Si es null stderr salida estandar de errores
+	fseek(fp,0,SEEK_END); //Se posiciona al final del archivo
+	int tamanio=ftell(fp);
+	printf("%i", tamanio);
+
+	while(!feof(fp))
+	{
+		fgets(buffer,sizeof(buffer),fp);
+		fread(buffer,sizeof(char),1,fp);
+		{
+			if(send(newsockfd,buffer,1,0)==-1)
+			{
+				perror("Error al enviar el arvhivo:");
+			}
+		}
+	}
+	
+	fclose(fp);
+	printf("upd");
+	fflush(stdout);
+}
+
+void scanning(int newsockfd)
+{	
+	int n;
+	n = write( newsockfd, "scanning", TAM);
+	error_escritura(n);
+	printf("sca");
+	fflush(stdout);
+}
+
+void telemetria(int newsockfd)
+{	
+	int n;
+	n = write( newsockfd, "telemetria", TAM);
+	error_escritura(n);
+	printf("tel");
+	fflush(stdout);
 }
