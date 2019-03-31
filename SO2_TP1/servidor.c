@@ -17,6 +17,8 @@ struct usuario
 void error_lectura(int);
 void error_escritura(int);
 int autenticacion (int newsockfd);
+void write_ack(int sockfd); 
+void read_ack(int sockfd);
 void update(int newsockfd);
 void scanning(int newsockfd);
 void telemetria(int newsockfd);
@@ -44,7 +46,6 @@ int main(int argc, char *argv[]) {
 	if(argc != 2)
 	{
 		printf( "Uso: %s <nombre_de_socket>\n", argv[0] );
-		fflush(stdout);
 		exit( 1 );
 	}
 
@@ -69,7 +70,6 @@ int main(int argc, char *argv[]) {
 	}
 
 	printf( "Proceso: %d - socket disponible: %s\n", getpid(), serv_addr.sun_path );
-	fflush(stdout);
 
 	listen(sockfd, NUMERO_CLIENTES);
 	clilen = sizeof( cli_addr );
@@ -91,19 +91,19 @@ int main(int argc, char *argv[]) {
 			exit(1);
 		}
 		
-		if ( pid == 0 ) 
-		{        // proceso hijo
+		if ( pid == 0 ) // proceso hijo
+		{        
 			close(sockfd);
-			memset(buffer,0,TAM);
-			if(autenticacion(newsockfd)==1)
+			if(autenticacion(newsockfd)==1)	//Verificacion de usuario
 			{
 				int flag=1;
 				while(flag)
 				{
 					memset(buffer, '\0', TAM );
-					n = read( newsockfd, buffer, TAM);
+					n = read( newsockfd, buffer, TAM); //Espera instrucciones del cliente
 					error_lectura(n);
-					strtok(buffer,"\n");		//Espera instrucciones del cliente
+
+					strtok(buffer,"\n");		
 					
 					if(strcmp(buffer,"update")==0)
 					{	
@@ -119,15 +119,14 @@ int main(int argc, char *argv[]) {
 					}
 					else if(strcmp(buffer,"fin")==0)
 					{
-						n = write( newsockfd, "fin", TAM);
+						n = write( newsockfd, "fin", 3);
 						error_escritura(n);
-						printf("Fin de la conexion con cliente");
-						fflush(stdout);
+						printf("Fin de la conexion con cliente\n");
 						exit(0);
 					}
 					else
 					{
-						n = write( newsockfd, "no existe funcion", TAM);
+						n = write( newsockfd, "No existe esa funcion", TAM);
 						error_escritura(n);
 					}
 				}	
@@ -135,9 +134,10 @@ int main(int argc, char *argv[]) {
 			}
 
 			else
-			{
-				printf("NO ANDUVO");
-				fflush(stdout);
+			{	
+				n = write( newsockfd, "Usuario denegado", 18);
+				error_escritura(n);
+				printf("Usuario denegado \n");
 				exit(0);
 			}
 		}
@@ -145,12 +145,12 @@ int main(int argc, char *argv[]) {
 		else 
 		{
 			printf( "SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid );
-			fflush(stdout);
 			close( newsockfd );
 		}
 	}
 	return 0;
 }
+
 
 void error_lectura(int n){
 	if ( n < 0 ) {
@@ -178,8 +178,10 @@ int autenticacion (int newsockfd)
 	{	
 		memset(buffer, '\0', TAM );
 		memset(aux_user, '\0', TAM);
+
 		n = read( newsockfd, buffer, TAM);
 		error_lectura(n);
+
 		strtok(buffer,"\n");
 		strcpy(aux_user,buffer);
 
@@ -232,9 +234,11 @@ int autenticacion (int newsockfd)
 			n = write(newsockfd, "pass", 5);
 			error_escritura(n);
 
-			memset( host, 0, sizeof(host));
+			read_ack(newsockfd);
+
+			memset( host, '\0', sizeof(host));
 			gethostname(host,sizeof(host));
-			usleep(1000);
+
 			n = write(newsockfd, host, sizeof(host));
 			error_escritura(n);
 			
@@ -248,37 +252,44 @@ int autenticacion (int newsockfd)
 
 	n = write(newsockfd, "fin", 5);
 	error_escritura(n);
+
+	read_ack(newsockfd);
 	return 0;
 }
 
 void update(int newsockfd)
 {
-	int n;
+	FILE *fp;
+	int size_file, n;
 	char buffer[TAM];
+
 	n = write( newsockfd, "update", TAM);
 	error_escritura(n);
 
-	FILE *fp =fopen("firmware","r"); //Abro un archivo en modo binario para lectura
-	if (fp==NULL) {fputs ("File error",stderr); exit (1);} //Si es null stderr salida estandar de errores
-	fseek(fp,0,SEEK_END); //Se posiciona al final del archivo
-	int tamanio=ftell(fp);
-	printf("%i", tamanio);
+	read_ack(newsockfd);
 
-	while(!feof(fp))
+	fp = fopen("firmware.bin", "rb");
+
+	if (fp == NULL)
 	{
-		fgets(buffer,sizeof(buffer),fp);
-		fread(buffer,sizeof(char),1,fp);
-		{
-			if(send(newsockfd,buffer,1,0)==-1)
-			{
-				perror("Error al enviar el arvhivo:");
-			}
-		}
+		printf("Error al abrir el file\n");
+		exit(1);
 	}
+
+	fseek(fp, 0, SEEK_END); //Posiciona el puntero en SEEK_END(final del file)
+	size_file = ftell(fp); //Obtengo el tamaño del file
+	fseek(fp, 0, SEEK_SET); //Posiciona el puntero en SEEK_SET(inicio del file)
 	
+	n=write(newsockfd, &size_file, sizeof(size_file)); //Envio el tamanio de file
+	error_escritura(n);
+
+	size_file = fread(buffer, 1, sizeof(buffer) - 1, fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
+
+	n = write(newsockfd, buffer, size_file);
+	error_escritura(n);
+	
+	memset(buffer,'\0',sizeof(buffer));
 	fclose(fp);
-	printf("upd");
-	fflush(stdout);
 }
 
 void scanning(int newsockfd)
@@ -297,4 +308,27 @@ void telemetria(int newsockfd)
 	error_escritura(n);
 	printf("tel");
 	fflush(stdout);
+}
+
+
+void write_ack(int newsockfd)
+{
+	static char buffer[] ="ack";
+	static int n;
+	n=write( newsockfd, buffer, strlen(buffer) );
+	error_escritura(n);		
+}
+
+void read_ack(int newsockfd)
+{
+	char buffer[TAM];
+	int n;
+	memset( buffer, '\0', TAM );
+	n = read( newsockfd, buffer, TAM );
+	error_lectura(n);
+
+	if(strcmp(buffer,"ack")!=0)	
+	{
+		exit(1);
+	}
 }

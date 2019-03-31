@@ -6,6 +6,8 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 #include <errno.h>
+#include <sys/ioctl.h>
+#include <string.h>
 
 #define COLOR_RED "\x1b[31m"
 #define COLOR_GREEN   "\x1b[32m"
@@ -16,16 +18,15 @@
 #define COLOR_CYAN    "\x1b[36m"
 #define COLOR_RESET   "\x1b[0m"
 
-// #define COLOR_GREEN "\033[0;32m"
-// #define	COLOR_WHITE "\033[0;0m"
-
 #define TAM 1024
 
-
+static char user_autenticado[20];
 
 int autenticacion(int sockfd, char *user_autenticado, char *hostname);
-void error_lectura(int);
-void error_escritura(int);
+void error_lectura(int n);
+void error_escritura(int n);
+void write_ack(int sockfd); 
+void read_ack(int sockfd);
 void update(int sockfd);
 void scanning(int sockfd);
 void telemetria(int sockfd);
@@ -33,14 +34,13 @@ void telemetria(int sockfd);
 int main( int argc, char *argv[] ) {
 	int sockfd, servlen,n;
 	struct sockaddr_un serv_addr;
-	char user_autenticado[20];
+	
 	char hostname[20];
 	char buffer[TAM];
 
 	if (argc < 2) 
 	{
 		fprintf( stderr, "Uso %s archivo\n", argv[0]);
-		fflush(stdout);
 		exit( 0 );
 	}
 
@@ -64,8 +64,10 @@ int main( int argc, char *argv[] ) {
 			
 	if(autenticacion(sockfd,user_autenticado,hostname)==0)
 	{
-		printf("No hubo conexion\n");
-		fflush(stdout);
+		memset( buffer, '\0', TAM );
+		n = read( sockfd, buffer, TAM );
+		error_lectura(n);
+		printf("Respuesta: %s\n", buffer);
 		exit(0);
 	}
 	else
@@ -96,14 +98,12 @@ int main( int argc, char *argv[] ) {
 			}
 			else if(strcmp(buffer,"fin")==0)
 			{
-				printf("Fin de la conexion");
-				fflush(stdout);
+				printf("Fin de la conexion\n");
 				exit(0);
 			}
 			else
 			{
-				printf("%s",buffer);
-				fflush(stdout);
+				printf("Respuesta del server: %s \n",buffer);
 			}
 		}
 		
@@ -143,8 +143,7 @@ int autenticacion(int sockfd,char *user_autenticado,char *hostname)
 	while(flag)
 	{
 		memset( buffer, '\0', TAM );
-		printf("Ingrese su usuario: ");	
-		fflush(stdout);
+		printf("Ingrese su usuario: \n");	
 		fgets( buffer, TAM-1, stdin );
 		token=strtok(buffer,"\n");
 		strcpy(user_aux,token);
@@ -156,8 +155,7 @@ int autenticacion(int sockfd,char *user_autenticado,char *hostname)
 		n = read(sockfd, buffer, TAM);
 		error_lectura(n);
 
-		printf("Respuesta:  %s", buffer);
-		fflush(stdout);
+		printf("Respuesta del server:  %s\n", buffer);
 		memset( buffer, '\0', TAM );
 		fgets( buffer, TAM-1, stdin );
 
@@ -167,9 +165,11 @@ int autenticacion(int sockfd,char *user_autenticado,char *hostname)
 		memset( buffer, '\0', TAM );
 		n = read( sockfd, buffer, TAM );
 		error_lectura(n);	
-	
+
 		if(strcmp(buffer,"pass")==0)
-		{		
+		{	
+			write_ack(sockfd);
+
 			memset(buffer, '\0', TAM);
 			strcpy(user_autenticado,user_aux);
 
@@ -180,28 +180,84 @@ int autenticacion(int sockfd,char *user_autenticado,char *hostname)
 		}
 		else if(strcmp(buffer,"fin")==0)
 		{
+			write_ack(sockfd);
 			return 0;
 		}
+		
 	}
 	return 1;
 }
 
 void update(int sockfd)
 {
-	char buffer;
-	int flag=-1;
-	printf("upd");
-	fflush(stdout);
-	FILE *fp = fopen("archivoRecibido","w");
-	while((flag==recv(sockfd,buffer,1,0))>0)
-	{	
-		printf("%c",buffer);
-		fputc(buffer,fp);
-		fflush(stdout);
+	int recv_size = 0,n , size_file_recv = 0, read_size, write_size, packet_index = 1;
+
+	char buffer[TAM],name_file[TAM];
+	FILE *fp;
+	
+	write_ack(sockfd);
+
+	n= read(sockfd, &size_file_recv, sizeof(size_file_recv));
+	error_lectura(n);
+
+	strcpy(name_file,user_autenticado);
+	strcat(name_file,".bin");
+
+	fp = fopen(name_file, "wb");
+
+	if (fp == NULL)
+	{
+		printf("Error para abrir el archivo\n");
+		exit(1);
 	}
+
+	// struct timeval timeout = {10, 0};
+
+	// fd_set fds;
+	// int buffer_fd;
+
+	// FD_ZERO(&fds);
+	// FD_SET(sockfd, &fds);
+
+	// buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
+
+	// if (buffer_fd < 0)
+	// 	printf("error: bad file descriptor set.\n");
+
+	// if (buffer_fd == 0)
+	// 	printf("error: buffer read timeout expired.\n");
+
+	// if (buffer_fd > 0)
+	// {
+	//	do
+	//	{
+	read_size = read(sockfd, buffer, 10241);
+	//	} while (read_size < 0);
+
+	printf("Packet number received: %i\n", packet_index);
+	printf("Packet size: %i\n", read_size);
+
+		//Write the currently read data into our image file
+	write_size = fwrite(buffer, 1, read_size, fp);
+	printf("Written image size: %i\n", write_size);
+
+	if (read_size != write_size)
+	{
+		printf("Error en la actualizacion\n");
+		exit(1);
+	}
+
+		//Increment the total number of bytes read
+	recv_size += read_size;
+	packet_index++;
+	printf("Total received image size: %i\n", recv_size);
+	printf(" \n");
+	printf(" \n");
+	//}
+	
+
 	fclose(fp);
-	printf("sali");
-	fflush(stdout);
+	printf("Image successfully Received!\n");
 }
 
 void scanning(int sockfd)
@@ -214,4 +270,26 @@ void telemetria(int sockfd)
 {
 	printf("tel");
 	fflush(stdout);
+}
+
+void write_ack(int sockfd)
+{
+	char buffer []="ack";
+	int n;
+	n=write( sockfd, buffer, strlen(buffer) );
+	error_escritura(n);		
+}
+
+void read_ack(int sockfd)
+{
+	char buffer[TAM];
+	int n;
+	memset( buffer, '\0', TAM );
+	n = read( sockfd, buffer, TAM );
+	error_lectura(n);
+
+	if(strcmp(buffer,"ack")!=0)	
+	{
+		exit(1);
+	}
 }
