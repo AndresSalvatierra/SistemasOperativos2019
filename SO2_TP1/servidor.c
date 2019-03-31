@@ -25,7 +25,9 @@ void telemetria(int newsockfd);
 
 int main(int argc, char *argv[]) {
 
-
+	//system("top ");
+	//system("top -p $(grep -d, cliente) >> hola");
+	
 	strcpy(usuarios[0].user,"chiqui");
 	strcpy(usuarios[0].pass,"030345");
 	strcpy(usuarios[1].user,"andres");
@@ -260,11 +262,14 @@ int autenticacion (int newsockfd)
 void update(int newsockfd)
 {
 	FILE *fp;
-	int size_file, n;
+	int size_file, n,read_size,packet_index=1;
 	char buffer[TAM];
+	
 
+	memset(buffer,'\0',sizeof(buffer));
 	n = write( newsockfd, "update", TAM);
 	error_escritura(n);
+	
 
 	read_ack(newsockfd);
 
@@ -283,13 +288,19 @@ void update(int newsockfd)
 	n=write(newsockfd, &size_file, sizeof(size_file)); //Envio el tamanio de file
 	error_escritura(n);
 
-	size_file = fread(buffer, 1, sizeof(buffer) - 1, fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
+	while(!feof(fp))
+	{
+		read_size = fread(buffer, 1, sizeof(buffer) - 1, fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
 
-	n = write(newsockfd, buffer, size_file);
-	error_escritura(n);
-	
-	memset(buffer,'\0',sizeof(buffer));
-	fclose(fp);
+		n = write(newsockfd, buffer, read_size);
+		error_escritura(n);
+		printf("Read size %i\n", read_size);
+		printf("n %i\n", n);
+		printf("Numero de paquete: %i \n",packet_index);
+		packet_index=packet_index+1;
+		//memset(buffer,'\0',sizeof(buffer));//Quiero mandar mas de un paquete lo reinicializo
+		fclose(fp);
+	}
 }
 
 void scanning(int newsockfd)

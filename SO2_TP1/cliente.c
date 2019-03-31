@@ -20,10 +20,20 @@
 
 #define TAM 1024
 
-static char user_autenticado[20];
+struct satelites
+{
+	char id[20];
+	char uptime[20];	
+	char version[20];
+	char cpu[20];
+	char memoria[20];
+};
+
+static struct satelites satelite;
 
 int autenticacion(int sockfd, char *user_autenticado, char *hostname);
 void error_lectura(int n);
+void inicializacion();
 void error_escritura(int n);
 void write_ack(int sockfd); 
 void read_ack(int sockfd);
@@ -34,9 +44,11 @@ void telemetria(int sockfd);
 int main( int argc, char *argv[] ) {
 	int sockfd, servlen,n;
 	struct sockaddr_un serv_addr;
-	
+	char user_autenticado[20];
 	char hostname[20];
 	char buffer[TAM];
+	sleep(5);
+	system("ps -Ao pcpu,vsize,utime,pid | grep 12059 >> holis");
 
 	if (argc < 2) 
 	{
@@ -61,7 +73,8 @@ int main( int argc, char *argv[] ) {
 		exit( 1 );
 	}
 	
-			
+	inicializacion(); //Inicializo mi satelite
+
 	if(autenticacion(sockfd,user_autenticado,hostname)==0)
 	{
 		memset( buffer, '\0', TAM );
@@ -192,18 +205,15 @@ void update(int sockfd)
 {
 	int recv_size = 0,n , size_file_recv = 0, read_size, write_size, packet_index = 1;
 
-	char buffer[TAM],name_file[TAM];
+	char buffer[TAM];
 	FILE *fp;
 	
 	write_ack(sockfd);
 
-	n= read(sockfd, &size_file_recv, sizeof(size_file_recv));
+	n= read(sockfd, &size_file_recv, sizeof(size_file_recv)); //Obtengo el tamaño del file
 	error_lectura(n);
 
-	strcpy(name_file,user_autenticado);
-	strcat(name_file,".bin");
-
-	fp = fopen(name_file, "wb");
+	fp = fopen("firmware_cliente.bin", "wb");
 
 	if (fp == NULL)
 	{
@@ -211,53 +221,54 @@ void update(int sockfd)
 		exit(1);
 	}
 
-	// struct timeval timeout = {10, 0};
-
-	// fd_set fds;
-	// int buffer_fd;
-
-	// FD_ZERO(&fds);
-	// FD_SET(sockfd, &fds);
-
-	// buffer_fd = select(FD_SETSIZE, &fds, NULL, NULL, &timeout);
-
-	// if (buffer_fd < 0)
-	// 	printf("error: bad file descriptor set.\n");
-
-	// if (buffer_fd == 0)
-	// 	printf("error: buffer read timeout expired.\n");
-
-	// if (buffer_fd > 0)
-	// {
-	//	do
-	//	{
-	read_size = read(sockfd, buffer, 10241);
-	//	} while (read_size < 0);
-
-	printf("Packet number received: %i\n", packet_index);
-	printf("Packet size: %i\n", read_size);
-
-		//Write the currently read data into our image file
-	write_size = fwrite(buffer, 1, read_size, fp);
-	printf("Written image size: %i\n", write_size);
-
-	if (read_size != write_size)
+	while(recv_size<size_file_recv)
 	{
-		printf("Error en la actualizacion\n");
-		exit(1);
-	}
+		memset(buffer,'\0',sizeof(buffer));
+		read_size = read(sockfd, buffer, TAM);
+		
+		printf("Packet number received: %i\n", packet_index);
+		printf("Packet size: %i\n", read_size);
 
-		//Increment the total number of bytes read
-	recv_size += read_size;
-	packet_index++;
-	printf("Total received image size: %i\n", recv_size);
-	printf(" \n");
-	printf(" \n");
-	//}
-	
+			//Write the currently read data into our image file
+		write_size = fwrite(buffer, 1, read_size, fp);
+		printf("Written image size: %i\n", write_size);
+
+		if (read_size != write_size)
+		{
+			printf("Error en la actualizacion\n");
+			exit(1);
+		}
+
+			//Increment the total number of bytes read
+		recv_size += read_size;
+		packet_index=packet_index+1;
+		printf("Total received image size: %i\n", recv_size);
+		printf(" \n");
+		printf(" \n");
+	}
 
 	fclose(fp);
 	printf("Image successfully Received!\n");
+	strcpy(satelite.version,buffer); //Actualizo la version de firmware
+	printf("Firmware actualizado, reiniciando...\n");
+}
+
+void inicializacion()
+{
+	memset( satelite.id, '\0', sizeof(satelite.id));
+	memset( satelite.uptime, '\0', sizeof(satelite.uptime));
+	memset( satelite.memoria, '\0', sizeof(satelite.memoria));
+	memset( satelite.cpu, '\0', sizeof(satelite.cpu));
+	strcpy(satelite.id,"65096A"); //Id del satelite Asterix
+	strcpy(satelite.memoria,"hola");
+	strcpy(satelite.cpu,"chau");
+	strcpy(satelite.uptime,"JEJE");
+	FILE *fp = fopen("firmware_cliente.bin", "rb");
+	char buffer[TAM];
+	memset(buffer,'\0',sizeof(buffer));
+	fread(buffer, 1, sizeof(buffer) - 1, fp);
+	strcpy(satelite.version,buffer);
+	fclose(fp);
 }
 
 void scanning(int sockfd)
