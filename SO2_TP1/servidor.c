@@ -315,10 +315,18 @@ void scanning(int newsockfd)
 void telemetria(int newsockfd)
 {	
 	int n;
+	char buffer[TAM];
 	n = write( newsockfd, "telemetria", TAM);
 	error_escritura(n);
-	printf("tel");
-	fflush(stdout);
+	
+	for (int i=0; i<10; i++)
+	{	
+		memset( buffer, '\0', TAM );
+		n = read( newsockfd, buffer, TAM );
+		error_lectura(n);
+		printf("%s\n", buffer);
+		write_ack(newsockfd);
+	}
 }
 
 

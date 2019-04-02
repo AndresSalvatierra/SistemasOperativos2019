@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <sys/ioctl.h>
 #include <string.h>
+#include <time.h>
 
 #define COLOR_RED "\x1b[31m"
 #define COLOR_GREEN   "\x1b[32m"
@@ -30,16 +31,19 @@ struct satelites
 };
 
 static struct satelites satelite;
+static struct tm *tlocal;
+static int minuto,segundo;
 
 int autenticacion(int sockfd, char *user_autenticado, char *hostname);
 void error_lectura(int n);
-void inicializacion();
+void info_satelite();
 void error_escritura(int n);
 void write_ack(int sockfd); 
 void read_ack(int sockfd);
 void update(int sockfd);
 void scanning(int sockfd);
 void telemetria(int sockfd);
+void hora();
 
 int main( int argc, char *argv[] ) {
 	int sockfd, servlen,n;
@@ -47,9 +51,6 @@ int main( int argc, char *argv[] ) {
 	char user_autenticado[20];
 	char hostname[20];
 	char buffer[TAM];
-	sleep(5);
-	system("ps -Ao pcpu,vsize,utime,pid | grep 12059 >> holis");
-
 	if (argc < 2) 
 	{
 		fprintf( stderr, "Uso %s archivo\n", argv[0]);
@@ -73,7 +74,12 @@ int main( int argc, char *argv[] ) {
 		exit( 1 );
 	}
 	
-	inicializacion(); //Inicializo mi satelite
+	time_t tiempo = time(0);
+	tlocal= localtime(&tiempo);
+	minuto=tlocal->tm_min;
+	segundo=tlocal->tm_sec;
+
+	info_satelite(); //Inicializo mi satelite
 
 	if(autenticacion(sockfd,user_autenticado,hostname)==0)
 	{
@@ -253,24 +259,69 @@ void update(int sockfd)
 	printf("Firmware actualizado, reiniciando...\n");
 }
 
-void inicializacion()
+void info_satelite()
 {
+	sleep(5);
+	char parameter[TAM]={0},pid[10]={0},buffer[TAM]={0};
+	FILE *fp;
+	int indice=0;
 	memset( satelite.id, '\0', sizeof(satelite.id));
 	memset( satelite.uptime, '\0', sizeof(satelite.uptime));
 	memset( satelite.memoria, '\0', sizeof(satelite.memoria));
 	memset( satelite.cpu, '\0', sizeof(satelite.cpu));
 	strcpy(satelite.id,"65096A"); //Id del satelite Asterix
-	strcpy(satelite.memoria,"hola");
-	strcpy(satelite.cpu,"chau");
-	strcpy(satelite.uptime,"JEJE");
-	FILE *fp = fopen("firmware_cliente.bin", "rb");
-	char buffer[TAM];
+	
+	
+	fp= fopen("firmware_cliente.bin", "rb");
 	memset(buffer,'\0',sizeof(buffer));
 	fread(buffer, 1, sizeof(buffer) - 1, fp);
 	strcpy(satelite.version,buffer);
 	fclose(fp);
+
+	system("rm ./info_cliente");
+	strcpy(parameter,"ps -Ao vsize,pcpu,pid | grep ");
+	sprintf(pid,"%i",getpid()); //Obtengo el pid para filtrar el ps
+	strcat(parameter,pid);
+	strcat(parameter," >> info_cliente");
+	system(parameter);
+
+	fp=fopen("info_cliente","r");
+	memset(buffer,'\0',sizeof(buffer));
+	fread(buffer, 1, sizeof(buffer) - 1, fp);
+	char *token=strtok(buffer," ");
+	
+	if(token != NULL){
+		while(token != NULL){
+			if(indice==0)
+				strcpy(satelite.memoria,token);
+			if(indice==1)
+				strcpy(satelite.cpu,token);
+			indice++;	
+			token=strtok(NULL," ");
+		}
+	}
+
+	hora();
+	
 }
 
+void hora()
+{	
+	char hora[24]={0},min[5]={0},seg[5]={0};
+	time_t tiempo_actual = time(0);
+	struct tm *tactual= localtime(&tiempo_actual);
+
+	int minutos= abs(tactual->tm_min -minuto);
+	int segundos=abs(tactual->tm_sec -segundo);
+
+	sprintf(min,"%i",minutos);
+	sprintf(seg,"%i",segundos);
+	strcpy(hora,min);
+	strcat(hora,":");
+	strcat(hora,seg);
+	
+	strcpy(satelite.uptime,hora);
+}
 void scanning(int sockfd)
 {
 	printf("sca");
@@ -278,9 +329,59 @@ void scanning(int sockfd)
 }
 
 void telemetria(int sockfd)
-{
-	printf("tel");
-	fflush(stdout);
+{	
+	int n;
+	n = write( sockfd, "Id_Satelite", TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, satelite.id, TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, "Uptime Satelite", TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	hora();
+	n = write( sockfd, satelite.uptime, TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, "Version Satelite", TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, satelite.version, TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, "Consumo CPU Satelite", TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, satelite.cpu, TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, "Consumo memoria Satelite", TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
+	n = write( sockfd, satelite.memoria, TAM);
+	error_escritura(n);
+
+	read_ack(sockfd);
+
 }
 
 void write_ack(int sockfd)
