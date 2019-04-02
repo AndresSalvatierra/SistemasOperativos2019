@@ -218,7 +218,8 @@ void update(int sockfd)
 
 	n= read(sockfd, &size_file_recv, sizeof(size_file_recv)); //Obtengo el tamaño del file
 	error_lectura(n);
-
+	write_ack(sockfd);
+	printf("%i\n",size_file_recv);
 	fp = fopen("firmware_cliente.bin", "wb");
 
 	if (fp == NULL)
@@ -229,14 +230,14 @@ void update(int sockfd)
 
 	while(recv_size<size_file_recv)
 	{
-		memset(buffer,'\0',sizeof(buffer));
 		read_size = read(sockfd, buffer, TAM);
-		
+
 		printf("Packet number received: %i\n", packet_index);
 		printf("Packet size: %i\n", read_size);
 
 			//Write the currently read data into our image file
 		write_size = fwrite(buffer, 1, read_size, fp);
+
 		printf("Written image size: %i\n", write_size);
 
 		if (read_size != write_size)
@@ -261,7 +262,6 @@ void update(int sockfd)
 
 void info_satelite()
 {
-	sleep(5);
 	char parameter[TAM]={0},pid[10]={0},buffer[TAM]={0};
 	FILE *fp;
 	int indice=0;

@@ -273,7 +273,7 @@ void update(int newsockfd)
 
 	read_ack(newsockfd);
 
-	fp = fopen("firmware.bin", "rb");
+	fp = fopen("./firmware.bin", "rb");
 
 	if (fp == NULL)
 	{
@@ -284,12 +284,13 @@ void update(int newsockfd)
 	fseek(fp, 0, SEEK_END); //Posiciona el puntero en SEEK_END(final del file)
 	size_file = ftell(fp); //Obtengo el tamaño del file
 	fseek(fp, 0, SEEK_SET); //Posiciona el puntero en SEEK_SET(inicio del file)
-	
 	n=write(newsockfd, &size_file, sizeof(size_file)); //Envio el tamanio de file
 	error_escritura(n);
 
+	read_ack(newsockfd);
 	while(!feof(fp))
 	{
+		printf("FEOF %i\n",feof(fp));
 		read_size = fread(buffer, 1, sizeof(buffer) - 1, fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
 
 		n = write(newsockfd, buffer, read_size);
@@ -299,8 +300,9 @@ void update(int newsockfd)
 		printf("Numero de paquete: %i \n",packet_index);
 		packet_index=packet_index+1;
 		//memset(buffer,'\0',sizeof(buffer));//Quiero mandar mas de un paquete lo reinicializo
-		fclose(fp);
+		bzero(buffer, sizeof(buffer));
 	}
+	fclose(fp);
 }
 
 void scanning(int newsockfd)
