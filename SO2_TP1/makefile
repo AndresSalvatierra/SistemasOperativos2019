@@ -1,8 +1,8 @@
-servidor : servidor.c
-	gcc -Wall -Werror -pedantic -o servidor servidor.c
+estacion : estacion.c
+	gcc -Wall -Werror -pedantic -o estacion estacion.c
 
-cliente: cliente.c
-	gcc -Wall -Werror -pedantic -o cliente cliente.c
+satelite : satelite.c
+	gcc -Wall -Werror -pedantic -o satelite satelite.c
 
 clean :
-	rm servidor cliente \
+	rm estacion satelite \
