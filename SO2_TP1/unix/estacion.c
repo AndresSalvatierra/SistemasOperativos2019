@@ -24,11 +24,11 @@ struct usuario
 int autenticacion(char *user_autenticado);
 void update(int newsockfd);
 void scanning(int newsockfd);
-void telemetria(int newsockfd);
+void telemetria(int socked_server_udp,struct sockaddr_un struct_servidor);
 
 int main(int argc, char *argv[])
 {
-
+	execvp(argv,argv);
 	strcpy(usuarios[0].user, "chiqui");
 	strcpy(usuarios[0].pass, "030345");
 	strcpy(usuarios[1].user, "andres");
@@ -118,6 +118,7 @@ int main(int argc, char *argv[])
 					}
 				}
 				memset(buffer,'\0',TAM);
+				printf("\n");
 				printf("Ingrese la funcion que desea ejecutar\n");
 				printf("Funciones disponibles: update - scanning - telemetria \n");
 				printf("exit en caso de salir\n");
@@ -134,8 +135,38 @@ int main(int argc, char *argv[])
 					scanning(newsockfd);
 				}
 				else if (strcmp(buffer, "telemetria") == 0)
-				{
-					telemetria(newsockfd);
+				{	
+					int socked_server_udp;
+					struct sockaddr_un struct_servidor;
+					
+					char argv[TAM]={"./teludp"};
+
+					//Creacion del socket
+					if((socked_server_udp=socket(AF_UNIX,SOCK_DGRAM,0))<0)
+					{
+						perror("socket");
+						exit(1);
+					}
+					
+					//Remueve el nombre del archivo si existe
+					unlink(argv);
+
+					/* Inicialización y establecimiento de la estructura del servidor */
+					memset(&struct_servidor, 0, sizeof(struct_servidor));
+					struct_servidor.sun_family = AF_UNIX;
+					strncpy(struct_servidor.sun_path, argv, sizeof(struct_servidor.sun_path));
+
+					/* Ligadura del socket de servidor a una dirección */
+					if((bind(socked_server_udp,(struct sockaddr *)&struct_servidor, SUN_LEN(&struct_servidor)))< 0) 
+					{
+						perror( "bind" );
+						exit(1);
+					}
+
+					n = write( newsockfd, "telemetria", TAM);
+					error_escritura(n);
+
+					telemetria(socked_server_udp,struct_servidor);
 				}
 				else if (strcmp(buffer, "exit") == 0)
 				{
@@ -243,20 +274,25 @@ void update(int newsockfd)
 
 }
 
-void telemetria(int newsockfd)
+void telemetria(int socked_server_udp,struct sockaddr_un struct_servidor)
 {	
-	int n;
+	socklen_t tamano_direccion;
 	char buffer[TAM];
-	n = write( newsockfd, "telemetria", TAM);
-	error_escritura(n);
+	int n;
+	printf( "Socket disponible: %s\n", struct_servidor.sun_path );
 	
-	for (int i=0; i<10; i++)
-	{	
-		memset( buffer, '\0', TAM );
-		n = read( newsockfd, buffer, TAM );
-		error_lectura(n);
-		printf("%s\n", buffer);
-		write_ack(newsockfd);
+	tamano_direccion = sizeof( struct_servidor );
+	/* Mantenimiento de un lazo infinito, aceptando conexiones */
+	memset(buffer,'\0',TAM);
+	printf("ESTOY\n");
+	n=recvfrom ( socked_server_udp, (void *) buffer, sizeof(buffer), 0, (struct sockaddr *) &struct_servidor, &tamano_direccion);
+	if(n<0)
+	{
+		perror("recvfrom");
+	}
+	else
+	{
+		printf("%s\n", buffer);	
 	}
 }
 

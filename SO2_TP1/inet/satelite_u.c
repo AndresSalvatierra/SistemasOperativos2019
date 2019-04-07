@@ -28,12 +28,13 @@ static int minuto,segundo;
 
 void update(int sockfd);
 void info_satelite();
-void telemetria(int sockfd);
+void telemetria();
 void dif_hora();
 void scanning(int sockfd);
 
 int main(int argc, char *argv[])
-{
+{	
+	
 	int sockfd, servlen,n;
 	struct sockaddr_un serv_addr;
 	char buffer[TAM];
@@ -84,7 +85,7 @@ int main(int argc, char *argv[])
 			}
 		else if(strcmp(buffer,"telemetria")==0)
 			{
-				telemetria(sockfd);
+				telemetria();
 			}
 		else
 			{
@@ -177,57 +178,44 @@ void dif_hora()
 	strcpy(satelite.uptime,hora);
 }
 
-void telemetria(int sockfd)
+void telemetria()
 {	
+
+	int socket_cli;
 	int n;
-	char buffer[TAM]={"Id_Satelite"};
-
-	for(int i=0;i<=4;i++)
+	char buffer[TAM]={"Id_Satelite "};
+	char argv[TAM]={"./teludp"};
+	struct sockaddr_un struct_cliente;
+	socklen_t direccion;
+	direccion=sizeof(struct_cliente);
+	
+	/* Creacion de socket */
+	if(( socket_cli = socket(AF_UNIX, SOCK_DGRAM, 0))< 0) 
 	{
-		n = write( sockfd, buffer, TAM);
-		error_escritura(n);
+		perror("socket");
+	}
+	/* Inicialización y establecimiento de la estructura del cliente */
+	memset( &struct_cliente, 0, sizeof( struct_cliente ) );
+	struct_cliente.sun_family = AF_UNIX;
+	strncpy( struct_cliente.sun_path, argv, sizeof( struct_cliente.sun_path ) );
 
-		read_ack(sockfd);
-		if(i==0)
-		{	
-			n = write( sockfd, satelite.id, TAM);
-			error_escritura(n);
-			read_ack(sockfd);
-			memset(buffer,'\0',TAM);
-			strcpy(buffer,"Uptime Satelite");
-		}
-		else if(i==1)
-		{
-			dif_hora();
-			n = write( sockfd, satelite.uptime, TAM);
-			error_escritura(n);
-			read_ack(sockfd);
-			memset(buffer,'\0',TAM);
-			strcpy(buffer,"Version Satelite");
-		}
-		else if(i==2)
-		{
-			n = write( sockfd, satelite.version, TAM);
-			error_escritura(n);
-			read_ack(sockfd);
-			memset(buffer,'\0',TAM);
-			strcpy(buffer,"Consumo CPU Satelite");
-		}
-		else if(i==3)
-		{
-			n = write( sockfd, satelite.cpu, TAM);
-			error_escritura(n);
-			read_ack(sockfd);
-			memset(buffer,'\0',TAM);
-			strcpy(buffer,"Consumo memoria Satelite");
-		}
-		else
-		{
-			n = write( sockfd, satelite.memoria, TAM);
-			error_escritura(n);
-			read_ack(sockfd);
-		}
-		
+	strcat(buffer,satelite.id);
+	strcat(buffer,"\n");
+	strcat(buffer,"Uptime Satelite ");
+	strcat(buffer,satelite.uptime);
+	strcat(buffer,"\n");
+	strcat(buffer,"Version Satelite ");
+	strcat(buffer,satelite.version);
+	strcat(buffer,"\n");
+	strcat(buffer,"Consumo CPU Satelite ");
+	strcat(buffer,satelite.cpu);
+	strcat(buffer,"\n");
+	strcat(buffer,"Consumo memoria Satelite ");
+	strcat(buffer,satelite.memoria);
+	n=sendto( socket_cli, (void *) buffer, sizeof(buffer), 0, (struct sockaddr *)&struct_cliente, direccion );
+	if(n<0)
+	{
+		perror("sendto");
 	}
 }
 

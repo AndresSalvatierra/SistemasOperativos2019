@@ -9,7 +9,7 @@
 int main( int argc, char *argv[] ) {
 	int descriptor_socket, resultado, cantidad, i;
 	struct sockaddr_un struct_cliente;
-	socklen_t tamano_direccion;
+	//socklen_t tamano_direccion;
 	char buffer[ TAM ];
 
 	/* Se toma el nombre del socket de la línea de comandos */
