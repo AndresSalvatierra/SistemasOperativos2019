@@ -6,13 +6,37 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <unistd.h>
-#define TAM 256
+#include <time.h>
+#include "funciones.h"
+
+#define TAM 1024
+
+struct satelites
+{
+	char id[20];
+	char uptime[20];	
+	char version[20];
+	char cpu[20];
+	char memoria[20];
+};
+
+void info_satelite();
+void dif_hora();
+
+static struct satelites satelite;
+static struct tm *tlocal;
+static int minuto,segundo;
+
+void update(int sockfd);
+void info_satelite();
+void telemetria(char *argv[]);
+void dif_hora();
+void scanning(int sockfd);
 
 int main( int argc, char *argv[] ) {
 	int sockfd, puerto, n;
 	struct sockaddr_in serv_addr;
 	struct hostent *server;
-	int terminar = 0;
 
 	char buffer[TAM];
 	if ( argc < 3 ) {
@@ -26,7 +50,7 @@ int main( int argc, char *argv[] ) {
 		perror( "ERROR apertura de socket" );
 		exit( 1 );
 	}
-
+	
 	server = gethostbyname( argv[1] );
 	if (server == NULL) {
 		fprintf( stderr,"Error, no existe el host\n" );
@@ -36,39 +60,179 @@ int main( int argc, char *argv[] ) {
 	serv_addr.sin_family = AF_INET;
 	bcopy( (char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length );
 	serv_addr.sin_port = htons( puerto );
+
+	time_t tiempo = time(0);
+	tlocal= localtime(&tiempo);
+	minuto=tlocal->tm_min;
+	segundo=tlocal->tm_sec;
+	
+	info_satelite(); //Inicializo mi satelite
+
 	if ( connect( sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr ) ) < 0 ) {
 		perror( "conexion" );
 		exit( 1 );
 	}
 
-	while(1) {
-		printf( "Ingrese el mensaje a transmitir: " );
-		memset( buffer, '\0', TAM );
-		fgets( buffer, TAM-1, stdin );
-
-		n = write( sockfd, buffer, strlen(buffer) );
-		if ( n < 0 ) {
-			perror( "escritura de socket" );
-			exit( 1 );
-		}
-
-		// Verificando si se escribió: fin
-		buffer[strlen(buffer)-1] = '\0';
-		if( !strcmp( "fin", buffer ) ) {
-			terminar = 1;
-		}
-
-		memset( buffer, '\0', TAM );
-		n = read( sockfd, buffer, TAM );
-		if ( n < 0 ) {
-			perror( "lectura de socket" );
-			exit( 1 );
-		}
-		printf( "Respuesta: %s\n", buffer );
-		if( terminar ) {
-			printf( "Finalizando ejecución\n" );
-			exit(0);
-		}
+	while(1) 
+	{
+		memset(buffer, '\0', TAM); 
+		n = read( sockfd, buffer, TAM);//Espera instrucciones del server
+		error_lectura(n);
+		if(strcmp(buffer,"update")==0)
+			{	
+				update(sockfd);
+			}
+		else if(strcmp(buffer,"scanning")==0)
+			{
+				scanning(sockfd);
+			}
+		else if(strcmp(buffer,"telemetria")==0)
+			{
+				telemetria(argv);
+			}
+		else
+			{
+				printf("Fin de la conexion\n");
+				exit(0);
+			}	
 	}
 	return 0;
 } 
+
+void info_satelite()
+{
+	char parameter[TAM]={0},pid[10]={0},buffer[TAM]={0};
+	FILE *fp;
+	int indice=0;
+	memset( satelite.id, '\0', sizeof(satelite.id));
+	memset( satelite.uptime, '\0', sizeof(satelite.uptime));
+	memset( satelite.memoria, '\0', sizeof(satelite.memoria));
+	memset( satelite.cpu, '\0', sizeof(satelite.cpu));
+	strcpy(satelite.id,"65096A"); //Id del satelite Asterix
+	
+	fp = fopen("/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/inet/satelite_dir/firmware_cliente.bin", "rb");
+	memset(buffer,'\0',sizeof(buffer));
+	fread(buffer, 1, sizeof(buffer) - 1, fp);
+	strcpy(satelite.version,strtok(buffer,"\n"));
+	fclose(fp);
+	system("rm /home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/inet/satelite_dir/info_cliente");
+	strcpy(parameter,"ps -Ao vsize,pcpu,pid | grep ");
+	sprintf(pid,"%i",getpid()); //Obtengo el pid para filtrar el ps
+	strcat(parameter,pid);
+	strcat(parameter," >> /home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/inet/satelite_dir/info_cliente");
+	system(parameter);
+
+	fp=fopen("/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/inet/satelite_dir/info_cliente","r");
+	memset(buffer,'\0',sizeof(buffer));
+	fread(buffer, 1, sizeof(buffer) - 1, fp);
+	char *token=strtok(buffer," ");
+	
+	if(token != NULL){
+		while(token != NULL){
+			if(indice==0)
+				strcpy(satelite.memoria,token);
+			if(indice==1)
+				strcpy(satelite.cpu,token);
+			indice++;	
+			token=strtok(NULL," ");
+		}
+	}
+
+	dif_hora();
+	
+}
+
+void dif_hora()
+{	
+	char hora[24]={0},min[5]={0},seg[5]={0};
+	time_t tiempo_actual = time(0);
+	struct tm *tactual= localtime(&tiempo_actual);
+	int minutos= abs(tactual->tm_min -minuto);
+	int segundos=tactual->tm_sec;
+	if(segundos<segundo)
+	{
+		minutos=minutos-1;
+		segundos=segundos+60;
+	}
+
+	sprintf(min,"%i",minutos);
+	sprintf(seg,"%i",segundos-segundo);
+	strcpy(hora,min);
+	strcat(hora,":");
+	strcat(hora,seg);
+	
+	strcpy(satelite.uptime,hora);
+}
+
+void update(int sockfd)
+{
+	char buffer[TAM],path[TAM];
+	FILE *fp;
+	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/inet/satelite_dir/firmware_cliente.bin");
+	write_ack(sockfd);
+	recibir_archivo(sockfd,path,TAM);
+	fp = fopen(path, "rb");
+	fread(buffer, 1, sizeof(buffer) - 1, fp);
+	strcpy(satelite.version,strtok(buffer,"\n")); //Actualizo la version de firmware
+	fclose(fp);
+	printf("Firmware actualizado, reiniciando...\n");
+}
+
+void telemetria(char *argv[])
+{	
+
+	int socket_cli;
+	int n;
+	char buffer[TAM]={"Id_Satelite "};
+	struct sockaddr_in struct_cliente;
+	socklen_t direccion;
+	struct hostent *server;
+	direccion=sizeof(struct_cliente);
+	
+	server = gethostbyname(argv[1]);
+	if ( server == NULL ) {
+		fprintf( stderr, "ERROR, no existe el host\n");
+		exit(0);
+	}
+
+	/* Creacion de socket */
+	socket_cli = socket( AF_INET, SOCK_DGRAM, 0 );
+	if (socket_cli < 0) {
+		perror( "apertura de socket" );
+		exit( 1 );
+	}
+	/* Inicialización y establecimiento de la estructura del cliente */
+	struct_cliente.sin_family = AF_INET;
+	struct_cliente.sin_port = htons( atoi( "8183" ) );
+	struct_cliente.sin_addr = *( (struct in_addr *)server->h_addr );
+	memset( &(struct_cliente.sin_zero), '\0', 8 );
+
+	strcat(buffer,satelite.id);
+	strcat(buffer,"\n");
+	strcat(buffer,"Uptime Satelite ");
+	strcat(buffer,satelite.uptime);
+	strcat(buffer,"\n");
+	strcat(buffer,"Version Satelite ");
+	strcat(buffer,satelite.version);
+	strcat(buffer,"\n");
+	strcat(buffer,"Consumo CPU Satelite ");
+	strcat(buffer,satelite.cpu);
+	strcat(buffer,"\n");
+	strcat(buffer,"Consumo memoria Satelite ");
+	strcat(buffer,satelite.memoria);
+	n=sendto( socket_cli, (void *) buffer, TAM, 0, (struct sockaddr *)&struct_cliente, direccion );
+	if(n<0)
+	{
+		perror("sendto");
+	}
+	close(socket_cli);
+}
+
+void scanning(int sockfd)
+{
+	char path[TAM];
+	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/inet/satelite_dir/tierra.jpg");
+	write_ack(sockfd);
+	enviar_archivo(sockfd,path,64000);
+
+}

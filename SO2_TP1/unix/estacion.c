@@ -263,7 +263,7 @@ void update(int newsockfd)
 	char path[TAM];
 
 	memset(path,'\0',TAM);
-	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/estacion_dir/firmware.bin");
+	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/estacion_dir/firmware.bin");
 
 	n = write( newsockfd, "update", TAM);
 	error_escritura(n);
@@ -294,6 +294,7 @@ void telemetria(int socked_server_udp,struct sockaddr_un struct_servidor)
 	{
 		printf("%s\n", buffer);	
 	}
+	close(socked_server_udp);
 }
 
 void scanning(int newsockfd)
@@ -301,10 +302,10 @@ void scanning(int newsockfd)
 	int n;
 	char path[TAM];
 	memset(path,'\0',TAM);
-	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/estacion_dir/escaneo.jpg");
+	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/estacion_dir/escaneo.jpg");
 	
 	n = write( newsockfd, "scanning", TAM);
 	error_escritura(n);
 	read_ack(newsockfd); //Si tengo dos write seguidos se rompe
-	recibir_archivo(newsockfd,path,10);
+	recibir_archivo(newsockfd,path,64000);
 }

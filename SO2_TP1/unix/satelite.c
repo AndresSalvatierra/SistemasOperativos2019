@@ -101,7 +101,7 @@ void update(int sockfd)
 {
 	char buffer[TAM],path[TAM];
 	FILE *fp;
-	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/satelite_dir/firmware_cliente.bin");
+	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/satelite_dir/firmware_cliente.bin");
 	write_ack(sockfd);
 	recibir_archivo(sockfd,path,TAM);
 	fp = fopen(path, "rb");
@@ -123,20 +123,20 @@ void info_satelite()
 	strcpy(satelite.id,"65096A"); //Id del satelite Asterix
 	
 	
-	fp = fopen("/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/satelite_dir/firmware_cliente.bin", "rb");
+	fp = fopen("/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/satelite_dir/firmware_cliente.bin", "rb");
 	memset(buffer,'\0',sizeof(buffer));
 	fread(buffer, 1, sizeof(buffer) - 1, fp);
 	strcpy(satelite.version,strtok(buffer,"\n"));
 	fclose(fp);
 
-	system("rm /home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/satelite_dir/info_cliente");
+	system("rm /home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/satelite_dir/info_cliente");
 	strcpy(parameter,"ps -Ao vsize,pcpu,pid | grep ");
 	sprintf(pid,"%i",getpid()); //Obtengo el pid para filtrar el ps
 	strcat(parameter,pid);
-	strcat(parameter," >> /home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/satelite_dir/info_cliente");
+	strcat(parameter," >> /home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/satelite_dir/info_cliente");
 	system(parameter);
 
-	fp=fopen("/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/satelite_dir/info_cliente","r");
+	fp=fopen("/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/satelite_dir/info_cliente","r");
 	memset(buffer,'\0',sizeof(buffer));
 	fread(buffer, 1, sizeof(buffer) - 1, fp);
 	char *token=strtok(buffer," ");
@@ -217,13 +217,14 @@ void telemetria()
 	{
 		perror("sendto");
 	}
+	close(socket_cli);
 }
 
 void scanning(int sockfd)
 {
 	char path[TAM];
-	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/satelite_dir/tierra.jpg");
+	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/satelite_dir/tierra.jpg");
 	write_ack(sockfd);
-	enviar_archivo(sockfd,path,10);
+	enviar_archivo(sockfd,path,64000);
 
 }

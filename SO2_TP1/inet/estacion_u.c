@@ -27,7 +27,7 @@ void telemetria(int socked_server_udp,struct sockaddr_un struct_servidor);
 
 int main(int argc, char *argv[])
 {
-	execvp(argv,argv);
+	//execvp(argv,argv);
 	strcpy(usuarios[0].user, "chiqui");
 	strcpy(usuarios[0].pass, "030345");
 	strcpy(usuarios[1].user, "andres");
@@ -117,7 +117,6 @@ int main(int argc, char *argv[])
 					}
 				}
 				memset(buffer,'\0',TAM);
-				printf("\n");
 				printf("Ingrese la funcion que desea ejecutar\n");
 				printf("Funciones disponibles: update - scanning - telemetria \n");
 				printf("exit en caso de salir\n");
