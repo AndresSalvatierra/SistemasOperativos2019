@@ -38,7 +38,7 @@ int main(int argc, char *argv[])
 	int sockfd, servlen,n;
 	struct sockaddr_un serv_addr;
 	char buffer[TAM];
-
+	printf("%i PID\n",getpid());
 	if (argc < 2)
 	{
 		fprintf(stderr, "Uso %s archivo\n", argv[0]);
@@ -109,9 +109,11 @@ void update(int sockfd, char *argv[])
 	strcpy(satelite.version,strtok(buffer,"\n")); //Actualizo la version de firmware
 	fclose(fp);
 	printf("Firmware actualizado, reiniciando...\n");
-	execvp(argv[0],argv);
 	close(sockfd);
+	execvp(argv[0],argv);
+	printf("ENTRE\n");
 	exit(0);
+	
 }
 
 void info_satelite()
