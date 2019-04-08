@@ -73,7 +73,6 @@ void enviar_archivo(int sockfd,char *path,int tam)
 
 		n = write(sockfd, buffer, read_size);
 		error_escritura(n);
-		//read_ack(sockfd);
 		printf("Read size %i\n", read_size);
 		printf("n %i\n", n);
 		printf("Numero de paquete: %i \n",packet_index);

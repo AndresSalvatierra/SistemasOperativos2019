@@ -26,7 +26,7 @@ static struct satelites satelite;
 static struct tm *tlocal;
 static int minuto,segundo;
 
-void update(int sockfd);
+void update(int sockfd, char *argv[]);
 void info_satelite();
 void telemetria();
 void dif_hora();
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 
 		if(strcmp(buffer,"update")==0)
 			{	
-				update(sockfd);
+				update(sockfd,argv);
 			}
 		else if(strcmp(buffer,"scanning")==0)
 			{
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 }
 
 
-void update(int sockfd)
+void update(int sockfd, char *argv[])
 {
 	char buffer[TAM],path[TAM];
 	FILE *fp;
@@ -109,6 +109,9 @@ void update(int sockfd)
 	strcpy(satelite.version,strtok(buffer,"\n")); //Actualizo la version de firmware
 	fclose(fp);
 	printf("Firmware actualizado, reiniciando...\n");
+	execvp(argv[0],argv);
+	close(sockfd);
+	exit(0);
 }
 
 void info_satelite()
@@ -158,23 +161,24 @@ void info_satelite()
 
 void dif_hora()
 {	
+
 	char hora[24]={0},min[5]={0},seg[5]={0};
 	time_t tiempo_actual = time(0);
 	struct tm *tactual= localtime(&tiempo_actual);
 	int minutos= abs(tactual->tm_min -minuto);
 	int segundos=tactual->tm_sec;
+	
 	if(segundos<segundo)
 	{
 		minutos=minutos-1;
 		segundos=segundos+60;
 	}
-
+	
 	sprintf(min,"%i",minutos);
 	sprintf(seg,"%i",segundos-segundo);
 	strcpy(hora,min);
 	strcat(hora,":");
 	strcat(hora,seg);
-	
 	strcpy(satelite.uptime,hora);
 }
 
@@ -183,12 +187,13 @@ void telemetria()
 
 	int socket_cli;
 	int n;
+	
 	char buffer[TAM]={"Id_Satelite "};
 	char argv[TAM]={"./teludp"};
 	struct sockaddr_un struct_cliente;
 	socklen_t direccion;
 	direccion=sizeof(struct_cliente);
-	
+	dif_hora();
 	/* Creacion de socket */
 	if(( socket_cli = socket(AF_UNIX, SOCK_DGRAM, 0))< 0) 
 	{
@@ -198,7 +203,6 @@ void telemetria()
 	memset( &struct_cliente, 0, sizeof( struct_cliente ) );
 	struct_cliente.sun_family = AF_UNIX;
 	strncpy( struct_cliente.sun_path, argv, sizeof( struct_cliente.sun_path ) );
-
 	strcat(buffer,satelite.id);
 	strcat(buffer,"\n");
 	strcat(buffer,"Uptime Satelite ");

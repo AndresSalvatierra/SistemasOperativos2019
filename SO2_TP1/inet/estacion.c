@@ -281,7 +281,6 @@ void telemetria(int socked_server_udp,struct sockaddr_in struct_servidor)
 	tamano_direccion = sizeof( struct_servidor );
 	/* Mantenimiento de un lazo infinito, aceptando conexiones */
 	memset(buffer,'\0',TAM);
-	printf("ESTOY\n");
 	n=recvfrom ( socked_server_udp, (void *) buffer, TAM-1, 0, (struct sockaddr *) &struct_servidor, &tamano_direccion);
 	if(n<0)
 	{
