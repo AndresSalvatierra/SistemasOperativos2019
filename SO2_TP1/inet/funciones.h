@@ -6,14 +6,20 @@ void enviar_archivo(int sockfd,char *path,int tam);
 void recibir_archivo(int sockfd,char *path, int tam);
 
 #define TAM 1024
-
+/**
+ * @brief Funcion encargada de la verificacion de la lectura del socket. En caso de error cierra el programa.
+ * @param entero. Representa los bytes enviados o -1 en caso de error.
+ */
 void error_lectura(int n){
 	if ( n < 0 ) {
 		perror( "lectura de socket" );
 		exit(1);
 	}
 }
-
+/**
+ * @brief Funcion encargada de la verificacion de la escritura del socket. En caso de error cierra el programa.
+ * @param entero. Representa los bytes enviados o -1 en caso de error.
+ */
 void error_escritura(int n){
 	if ( n < 0 ) {
 		perror( "escritura de socket" );
@@ -22,6 +28,10 @@ void error_escritura(int n){
 
 }
 
+/**
+ * @brief Funcion encargada del envio de acknowledge, utilizada en caso de tener dos read seguidos.
+ * @param socketfd. Socket por el cual se lleva a cabo la comunicacion.
+ */
 void write_ack(int sockfd)
 {
 	char buffer []="ack";
@@ -30,6 +40,10 @@ void write_ack(int sockfd)
 	error_escritura(n);		
 }
 
+/**
+ * @brief Funcion encargada de la recepcion de acknowledge, utilizada en caso de tener dos write seguidos.
+ * @param socketfd. Socket por el cual se lleva a cabo la comunicacion.
+ */
 void read_ack(int sockfd)
 {
 	char buffer[TAM];
@@ -44,6 +58,12 @@ void read_ack(int sockfd)
 	}
 }
 
+/**
+ * @brief Funcion encargada del envio de archivos, se envia primero el tamaño del tamaño a enviar y se sigue enviando hasta llegar al final del archivo.
+ * 		  Es utilizada en la funcion update y en la funcion scanning.
+ * @param sockfd, path, tam. Es el socket por el cual se lleva a cabo la comunicacion, el path en el cual tengo ubicado el archivo
+ * 							 y por ultimo el tamaño maximo del buffer donde voy a cargar la informacion a enviar.
+ */
 void enviar_archivo(int sockfd,char *path,int tam)
 {
 	FILE *fp;
@@ -81,6 +101,12 @@ void enviar_archivo(int sockfd,char *path,int tam)
 	fclose(fp);
 }
 
+/**
+ * @brief Funcion encargada de la recepcion de archivos. Primero se recibe el tamaño de datos que voy a recibir, hasta no alcanzar este maximo no dejo de recibir.
+ * 		   Es utilizada en la funcion update y en la funcion scanning.
+ * @param sockfd, path, tam. Es el socket por el cual se lleva a cabo la comunicacion, el path en el cual voy a guardar el archivo
+ * 							 y por ultimo el tamaño maximo del buffer donde voy a cargar la informacion a enviar.
+ */
 void recibir_archivo(int sockfd,char *path, int tam)
 {
 	int recv_size = 0,n , size_file_recv = 0, read_size, write_size, packet_index = 1;

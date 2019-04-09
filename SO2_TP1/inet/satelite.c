@@ -11,7 +11,7 @@
 
 #define TAM 1024
 
-struct satelites
+struct satelites	//Informacion referida al satelite
 {
 	char id[20];
 	char uptime[20];	
@@ -27,7 +27,7 @@ static struct satelites satelite;
 static struct tm *tlocal;
 static int minuto,segundo;
 
-void update(int sockfd);
+void update(int sockfd, char *argv[]);
 void info_satelite();
 void telemetria(char *argv[]);
 void dif_hora();
@@ -61,7 +61,7 @@ int main( int argc, char *argv[] ) {
 	bcopy( (char *)server->h_addr, (char *)&serv_addr.sin_addr.s_addr, server->h_length );
 	serv_addr.sin_port = htons( puerto );
 
-	time_t tiempo = time(0);
+	time_t tiempo = time(0);	//Obtengo la hora de comienzo de ejecucion del proceso
 	tlocal= localtime(&tiempo);
 	minuto=tlocal->tm_min;
 	segundo=tlocal->tm_sec;
@@ -80,7 +80,7 @@ int main( int argc, char *argv[] ) {
 		error_lectura(n);
 		if(strcmp(buffer,"update")==0)
 			{	
-				update(sockfd);
+				update(sockfd,argv);
 			}
 		else if(strcmp(buffer,"scanning")==0)
 			{
@@ -99,6 +99,11 @@ int main( int argc, char *argv[] ) {
 	return 0;
 } 
 
+
+/**
+ * @brief Funcion encargada de la recoleccion de datos para llenar la informacion de la estructura satelite.
+ * 		   Necesaria para la funcion telemetria.
+  */
 void info_satelite()
 {
 	char parameter[TAM]={0},pid[10]={0},buffer[TAM]={0};
@@ -142,6 +147,10 @@ void info_satelite()
 	
 }
 
+
+/**
+ * @brief Funcion encargada de obtener el tiempo que lleva ejecutandose el proceso satelite en el sistema.
+  */
 void dif_hora()
 {	
 	char hora[24]={0},min[5]={0},seg[5]={0};
@@ -164,7 +173,13 @@ void dif_hora()
 	strcpy(satelite.uptime,hora);
 }
 
-void update(int sockfd)
+
+/**
+ * @brief Funcion encargada de la actualizacion del firmware, recibe la actualizacion y se reinicia.
+ * @param socketfd y argv. Socket tcp por el cual se inicia y se lleva a cabo la comunicacion. 
+ * 						   El segundo parametro es utilizado para el reinicio del proceso.
+ */
+void update(int sockfd, char *argv[])
 {
 	char buffer[TAM],path[TAM];
 	FILE *fp;
@@ -176,11 +191,16 @@ void update(int sockfd)
 	strcpy(satelite.version,strtok(buffer,"\n")); //Actualizo la version de firmware
 	fclose(fp);
 	printf("Firmware actualizado, reiniciando...\n");
+	close(sockfd);
+	execvp(argv[0],argv); //Reinicio
 }
 
+
+/**
+ * @brief Funcion encargada del envio de la informacion del satelite.
+ */
 void telemetria(char *argv[])
 {	
-
 	int socket_cli;
 	int n;
 	char buffer[TAM]={"Id_Satelite "};
@@ -188,7 +208,7 @@ void telemetria(char *argv[])
 	socklen_t direccion;
 	struct hostent *server;
 	direccion=sizeof(struct_cliente);
-	
+	info_satelite();
 	server = gethostbyname(argv[1]);
 	if ( server == NULL ) {
 		fprintf( stderr, "ERROR, no existe el host\n");
@@ -228,6 +248,11 @@ void telemetria(char *argv[])
 	close(socket_cli);
 }
 
+
+/**
+ * @brief Funcion encargada del envio de la imagen enviada a la estacion.
+ * @param socketfd. Socket tcp por el cual se inicio la comunicacion y por el cual se reciben los datos.
+ */
 void scanning(int sockfd)
 {
 	char path[TAM];

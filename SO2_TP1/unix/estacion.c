@@ -6,16 +6,13 @@
 #include <string.h>
 #include "funciones.h"
 
-#define TAM 1024
 #define NUMERO_USUARIOS 5
 
 #define COLOR_RED "\x1b[31m"
 #define COLOR_WHITE "\033[0;0m"
 #define COLOR_RESET "\x1b[0m"
-//Un solo cliente, se debe conectar de forma segura con una ip y puerto fijo.
-//Cerrar el servidor en maximo de intentos
 
-struct usuario
+struct usuario	//Usuarios validos en el sistema
 {
 	char user[10];
 	char pass[10];
@@ -46,9 +43,8 @@ int main(int argc, char *argv[])
 	char user_autenticado[20];
 
 	memset(host, '\0', sizeof(host));
-	gethostname(host, sizeof(host));
+	gethostname(host, sizeof(host));	//Usado para el prompt
 
-	/* Se toma el nombre del socket de la línea de comandos */
 	if (argc != 2)
 
 	{
@@ -104,22 +100,22 @@ int main(int argc, char *argv[])
 		// 	close(sockfd);
 		while (flag_update==0)
 		{	
-			while (autenticado == 0)
+			while (autenticado == 0)	//Si no estoy autenticado
 			{
-				if (autenticacion(user_autenticado))
+				if (autenticacion(user_autenticado)) //Autenticacion valida
 				{
 					autenticado = 1;
 				}
-				else
+				else								//Se excedieron los intentos, cierro el programa
 				{
 					n = write(newsockfd, "fin", 3);
 					error_escritura(n);
 					printf("Fin de la conexion\n");
-					exit(0); //VER COMO MATO AL PADRE
+					exit(0); 
 				}
 			}
+
 			memset(buffer, '\0', TAM);
-			printf("\n");
 			printf("Ingrese la funcion que desea ejecutar\n");
 			printf("Funciones disponibles: update - scanning - telemetria \n");
 			printf("exit en caso de salir\n");
@@ -127,7 +123,7 @@ int main(int argc, char *argv[])
 			fgets(buffer, TAM - 1, stdin);
 			strtok(buffer, "\n");
 
-			if (strcmp(buffer, "update") == 0)
+			if (strcmp(buffer, "update") == 0)	//Determinacion de que hacer
 			{
 				update(newsockfd);
 				flag_update=1;
@@ -143,7 +139,7 @@ int main(int argc, char *argv[])
 
 				char argv[TAM] = {"./teludp"};
 
-				//Creacion del socket
+				//Creacion del socket udp 
 				if ((socked_server_udp = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
 				{
 					perror("socket");
@@ -158,6 +154,9 @@ int main(int argc, char *argv[])
 				struct_servidor.sun_family = AF_UNIX;
 				strncpy(struct_servidor.sun_path, argv, sizeof(struct_servidor.sun_path));
 
+				n = write(newsockfd, "telemetria", TAM);
+				error_escritura(n);
+
 				/* Ligadura del socket de servidor a una dirección */
 				if ((bind(socked_server_udp, (struct sockaddr *)&struct_servidor, SUN_LEN(&struct_servidor))) < 0)
 				{
@@ -165,14 +164,12 @@ int main(int argc, char *argv[])
 					exit(1);
 				}
 
-				n = write(newsockfd, "telemetria", TAM);
-				error_escritura(n);
 
 				telemetria(socked_server_udp, struct_servidor);
 			}
 			else if (strcmp(buffer, "exit") == 0)
 			{
-				autenticado = 0; //Vuelvo a la espera de un nuevo usuario
+				autenticado = 0; 				//Vuelvo a la espera de un nuevo usuario
 				printf("Fin de la conexion\n");
 				sleep(5);
 				//exit(0);
@@ -193,13 +190,18 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
+/**
+ * @brief Funcion encargada de la autenticacion del cliente.
+ * @param user_atenticado. De ser valida la autenticacion devuelve el usuario para utilizarlo en el prompt
+ * @return 1 en caso de validarse, 0 en caso de no ser valido.
+ */
 int autenticacion(char *user_autenticado)
 {
 	int validez = 0, validez_pass = 0, max = 3, validez_user = 0, aux_i;
 	char buffer[TAM];
 	char aux_user[TAM];
 
-	while (validez == 0 && max > 0)
+	while (validez == 0 && max > 0)	//Mientras no sea valido y no supere el maximo de intentos
 	{
 		memset(buffer, '\0', TAM);
 		memset(aux_user, '\0', TAM);
@@ -244,7 +246,7 @@ int autenticacion(char *user_autenticado)
 			validez_pass = 0; //Inicializo nuevamente
 			validez_user = 0;
 
-			if (max == 0)
+			if (max == 0) //Alcanzo el maximo de intentos
 			{
 				printf("Se excedio de intentos, intentelo mas tarde\n");
 				return 0;
@@ -260,6 +262,10 @@ int autenticacion(char *user_autenticado)
 	return 1;
 }
 
+/**
+ * @brief Funcion encargada de la actualizacion del firmware del satelite, lee un archivo binario y lo envia.
+ * @param socketfd. Socket tcp por el cual se inicia y se lleva a cabo la comunicacion.
+ */
 void update(int newsockfd)
 {
 	int n;
@@ -271,13 +277,17 @@ void update(int newsockfd)
 	n = write(newsockfd, "update", TAM);
 	error_escritura(n);
 
-	read_ack(newsockfd); //Si tengo dos write seguidos se rompe
+	read_ack(newsockfd); 
 
-	enviar_archivo(newsockfd, path, TAM);
+	enviar_archivo(newsockfd, path, TAM); 
 	error_escritura(n);
 	close(newsockfd);
 }
 
+/**
+ * @brief Funcion encargada de la recepcion de la informacion del satelite.
+ * @param socket udp y estructura del socket
+ */
 void telemetria(int socked_server_udp, struct sockaddr_un struct_servidor)
 {
 	socklen_t tamano_direccion;
@@ -286,7 +296,7 @@ void telemetria(int socked_server_udp, struct sockaddr_un struct_servidor)
 	printf("Socket disponible: %s\n", struct_servidor.sun_path);
 
 	tamano_direccion = sizeof(struct_servidor);
-	/* Mantenimiento de un lazo infinito, aceptando conexiones */
+	
 	memset(buffer, '\0', TAM);
 	n = recvfrom(socked_server_udp, (void *)buffer, sizeof(buffer), 0, (struct sockaddr *)&struct_servidor, &tamano_direccion);
 	if (n < 0)
@@ -300,6 +310,10 @@ void telemetria(int socked_server_udp, struct sockaddr_un struct_servidor)
 	close(socked_server_udp);
 }
 
+/**
+ * @brief Funcion encargada de la recepcion de la imagen enviada por el satelite.
+ * @param socketfd. Socket tcp por el cual se inicio la comunicacion y por el cual se reciben los datos.
+ */
 void scanning(int newsockfd)
 {
 	int n;
@@ -309,6 +323,6 @@ void scanning(int newsockfd)
 
 	n = write(newsockfd, "scanning", TAM);
 	error_escritura(n);
-	read_ack(newsockfd); //Si tengo dos write seguidos se rompe
+	read_ack(newsockfd); 
 	recibir_archivo(newsockfd, path, 64000);
 }

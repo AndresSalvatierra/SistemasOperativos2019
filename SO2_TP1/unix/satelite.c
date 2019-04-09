@@ -1,5 +1,3 @@
-/* Cliente en el dominio Unix - orientado a corrientes */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -13,7 +11,7 @@
 #define TAM 1024
 
 
-struct satelites
+struct satelites		//Informacion referida al satelite
 {
 	char id[20];
 	char uptime[20];	
@@ -38,7 +36,6 @@ int main(int argc, char *argv[])
 	int sockfd, servlen,n;
 	struct sockaddr_un serv_addr;
 	char buffer[TAM];
-	printf("%i PID\n",getpid());
 	if (argc < 2)
 	{
 		fprintf(stderr, "Uso %s archivo\n", argv[0]);
@@ -62,10 +59,10 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	
-	time_t tiempo = time(0);
+	time_t tiempo = time(0);	//Obtengo la hora de comienzo de ejecucion del proceso
 	tlocal= localtime(&tiempo);
 	minuto=tlocal->tm_min;
-	segundo=tlocal->tm_sec;
+	segundo=tlocal->tm_sec;	
 
 	info_satelite(); //Inicializo mi satelite
 	
@@ -96,7 +93,11 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-
+/**
+ * @brief Funcion encargada de la actualizacion del firmware, recibe la actualizacion y se reinicia.
+ * @param socketfd y argv. Socket tcp por el cual se inicia y se lleva a cabo la comunicacion. 
+ * 						   El segundo parametro es utilizado para el reinicio del proceso.
+ */
 void update(int sockfd, char *argv[])
 {
 	char buffer[TAM],path[TAM];
@@ -110,12 +111,13 @@ void update(int sockfd, char *argv[])
 	fclose(fp);
 	printf("Firmware actualizado, reiniciando...\n");
 	close(sockfd);
-	execvp(argv[0],argv);
-	printf("ENTRE\n");
-	exit(0);
-	
+	execvp(argv[0],argv); //Reinicio
 }
 
+/**
+ * @brief Funcion encargada de la recoleccion de datos para llenar la informacion de la estructura satelite.
+ * 		   Necesaria para la funcion telemetria.
+  */
 void info_satelite()
 {
 	char parameter[TAM]={0},pid[10]={0},buffer[TAM]={0};
@@ -161,6 +163,9 @@ void info_satelite()
 	
 }
 
+/**
+ * @brief Funcion encargada de obtener el tiempo que lleva ejecutandose el proceso satelite en el sistema.
+  */
 void dif_hora()
 {	
 
@@ -184,6 +189,10 @@ void dif_hora()
 	strcpy(satelite.uptime,hora);
 }
 
+
+/**
+ * @brief Funcion encargada del envio de la informacion del satelite.
+ */
 void telemetria()
 {	
 
@@ -193,9 +202,9 @@ void telemetria()
 	char buffer[TAM]={"Id_Satelite "};
 	char argv[TAM]={"./teludp"};
 	struct sockaddr_un struct_cliente;
-	socklen_t direccion;
+	socklen_t direccion;			
 	direccion=sizeof(struct_cliente);
-	dif_hora();
+	info_satelite();
 	/* Creacion de socket */
 	if(( socket_cli = socket(AF_UNIX, SOCK_DGRAM, 0))< 0) 
 	{
@@ -226,11 +235,15 @@ void telemetria()
 	close(socket_cli);
 }
 
+
+/**
+ * @brief Funcion encargada del envio de la imagen enviada a la estacion.
+ * @param socketfd. Socket tcp por el cual se inicio la comunicacion y por el cual se reciben los datos.
+ */
 void scanning(int sockfd)
 {
 	char path[TAM];
 	strcpy(path,"/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/satelite_dir/tierra.jpg");
 	write_ack(sockfd);
 	enviar_archivo(sockfd,path,64000);
-
 }

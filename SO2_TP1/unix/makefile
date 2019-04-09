@@ -1,3 +1,5 @@
+all: estacion satelite
+
 estacion : estacion.c
 	gcc -Wall -Werror -pedantic -o estacion estacion.c
 
