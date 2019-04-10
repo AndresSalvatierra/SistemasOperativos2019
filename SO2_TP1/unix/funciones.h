@@ -113,7 +113,7 @@ void recibir_archivo(int sockfd,char *path, int tam)
 {
 	int recv_size = 0,n, size_file_recv = 0, read_size=0, write_size=0, packet_index = 1;
 	char buffer[tam];
-	
+
 	write_ack(sockfd);
 	n=read(sockfd, &size_file_recv, sizeof(size_file_recv)); //Obtengo el tamaño del file
 	error_lectura(n);
@@ -132,7 +132,7 @@ void recibir_archivo(int sockfd,char *path, int tam)
 
 	while(recv_size<size_file_recv)
 	{	
-		memset(buffer,'\0',sizeof(tam));
+		memset(buffer,'\0',sizeof(buffer));
 		read_size = read(sockfd, buffer, sizeof(buffer));
 		printf("Packet number received: %i\n", packet_index);
 		printf("Packet size: %i\n", read_size);

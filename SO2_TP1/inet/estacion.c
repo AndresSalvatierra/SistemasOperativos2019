@@ -290,7 +290,7 @@ void scanning(int newsockfd)
 	n = write( newsockfd, "scanning", TAM);
 	error_escritura(n);
 	read_ack(newsockfd); 
-	recibir_archivo(newsockfd,path,1200);
+	recibir_archivo(newsockfd,path,1400);
 }
 
 
