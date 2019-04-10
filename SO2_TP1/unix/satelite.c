@@ -245,5 +245,5 @@ void scanning(int sockfd)
 	char path[TAM];
 	strcpy(path,"./satelite_dir/tierra.jpg");
 	write_ack(sockfd);
-	enviar_archivo(sockfd,path,1400);
+	enviar_archivo(sockfd,path,1448);
 }

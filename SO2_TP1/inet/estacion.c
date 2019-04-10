@@ -47,12 +47,6 @@ int main( int argc, char *argv[] )
 	memset(host, '\0', sizeof(host));
 	gethostname(host, sizeof(host));	//Usado para el prompt
 
-	if ( argc < 2 )
-	{
-		fprintf( stderr, "Uso: %s <puerto>\n", argv[0] );
-		exit( 1 );
-	}
-
 	sockfd = socket( AF_INET, SOCK_STREAM, 0);
 	if ( sockfd < 0 ) { 
 		perror( " apertura de socket ");
@@ -290,7 +284,7 @@ void scanning(int newsockfd)
 	n = write( newsockfd, "scanning", TAM);
 	error_escritura(n);
 	read_ack(newsockfd); 
-	recibir_archivo(newsockfd,path,1400);
+	recibir_archivo(newsockfd,path,1448);
 }
 
 

@@ -90,7 +90,7 @@ void enviar_archivo(int sockfd,char *path,int tam)
 	while(!feof(fp))	//Si no llegue al final del archivo
 	{	
 		memset(buffer,'\0',sizeof(buffer));//Quiero mandar mas de un paquete lo reinicializo
-		read_size = fread(buffer, 1, sizeof(buffer) - 1, fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
+		read_size = fread(buffer, 1, sizeof(buffer), fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
 
 		n=write(sockfd, buffer, read_size);
 		usleep(70000);
