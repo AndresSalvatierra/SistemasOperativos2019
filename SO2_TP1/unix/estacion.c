@@ -272,7 +272,7 @@ void update(int newsockfd)
 	char path[TAM];
 
 	memset(path, '\0', TAM);
-	strcpy(path, "/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/estacion_dir/firmware.bin");
+	strcpy(path, "./estacion_dir/firmware.bin");
 
 	n = write(newsockfd, "update", TAM);
 	error_escritura(n);
@@ -319,10 +319,10 @@ void scanning(int newsockfd)
 	int n;
 	char path[TAM];
 	memset(path, '\0', TAM);
-	strcpy(path, "/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP1/unix/estacion_dir/escaneo.jpg");
+	strcpy(path, "./estacion_dir/escaneo.jpg");
 
 	n = write(newsockfd, "scanning", TAM);
 	error_escritura(n);
 	read_ack(newsockfd); 
-	recibir_archivo(newsockfd, path, 64000);
+	recibir_archivo(newsockfd, path, 1400);
 }
