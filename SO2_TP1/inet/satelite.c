@@ -65,7 +65,6 @@ int main( int argc, char *argv[] ) {
 	tlocal= localtime(&tiempo);
 	minuto=tlocal->tm_min;
 	segundo=tlocal->tm_sec;
-	
 	info_satelite(); //Inicializo mi satelite
 
 	if ( connect( sockfd, (struct sockaddr *)&serv_addr, sizeof(serv_addr ) ) < 0 ) {
@@ -106,6 +105,7 @@ int main( int argc, char *argv[] ) {
   */
 void info_satelite()
 {
+	
 	char parameter[TAM]={0},pid[10]={0},buffer[TAM]={0};
 	FILE *fp;
 	int indice=0;
@@ -126,7 +126,7 @@ void info_satelite()
 	strcat(parameter,pid);
 	strcat(parameter," >> ./satelite_dir/info_cliente");
 	system(parameter);
-
+	
 	fp=fopen("./satelite_dir/info_cliente","r");
 	memset(buffer,'\0',sizeof(buffer));
 	fread(buffer, 1, sizeof(buffer) - 1, fp);
@@ -184,6 +184,7 @@ void update(int sockfd, char *argv[])
 	char buffer[TAM],path[TAM];
 	FILE *fp;
 	strcpy(path,"./satelite_dir/firmware_cliente.bin");
+	printf("HOLA");
 	write_ack(sockfd);
 	recibir_archivo(sockfd,path,TAM);
 	fp = fopen(path, "rb");

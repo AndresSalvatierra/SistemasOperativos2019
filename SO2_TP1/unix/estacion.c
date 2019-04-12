@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 	strcpy(usuarios[4].user, "floki");
 	strcpy(usuarios[4].pass, "13579");
 
-	int sockfd, newsockfd, servlen, n, autenticado = 0,flag_update; //pid,
+	int sockfd, newsockfd, servlen, n, autenticado = 0, pid; 
 	unsigned int clilen;
 	struct sockaddr_un cli_addr, serv_addr;
 	char buffer[TAM], host[TAM];
@@ -86,107 +86,99 @@ int main(int argc, char *argv[])
 			exit(1);
 		}
 
-		flag_update=0;
-
-		// pid = fork();
-		// if (pid < 0)
-		// {
-		// 	perror("fork");
-		// 	exit(1);
-		// }
-
-		// if (pid == 0) // proceso hijo
-		// {
-		// 	close(sockfd);
-		while (flag_update==0)
-		{	
-			while (autenticado == 0)	//Si no estoy autenticado
+		while (autenticado == 0)	//Si no estoy autenticado
+		{
+			if (autenticacion(user_autenticado)) //Autenticacion valida
 			{
-				if (autenticacion(user_autenticado)) //Autenticacion valida
-				{
-					autenticado = 1;
-				}
-				else								//Se excedieron los intentos, cierro el programa
-				{
-					n = write(newsockfd, "fin", 3);
-					error_escritura(n);
-					printf("Fin de la conexion\n");
-					exit(0); 
-				}
+				autenticado = 1;
 			}
-
-			memset(buffer, '\0', TAM);
-			printf("Ingrese la funcion que desea ejecutar\n");
-			printf("Funciones disponibles: update - scanning - telemetria \n");
-			printf("exit en caso de salir\n");
-			printf(COLOR_RED "%s@%s:~ %s" COLOR_RESET, user_autenticado, host, COLOR_WHITE "Ingrese el mensaje a transmitir: " COLOR_RESET);
-			fgets(buffer, TAM - 1, stdin);
-			strtok(buffer, "\n");
-
-			if (strcmp(buffer, "update") == 0)	//Determinacion de que hacer
+			else								//Se excedieron los intentos, cierro el programa
 			{
-				update(newsockfd);
-				flag_update=1;
-			}
-			else if (strcmp(buffer, "scanning") == 0)
-			{
-				scanning(newsockfd);
-			}
-			else if (strcmp(buffer, "telemetria") == 0)
-			{
-				int socked_server_udp;
-				struct sockaddr_un struct_servidor;
-
-				char argv[TAM] = {"./teludp"};
-
-				//Creacion del socket udp 
-				if ((socked_server_udp = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
-				{
-					perror("socket");
-					exit(1);
-				}
-
-				//Remueve el nombre del archivo si existe
-				unlink(argv);
-
-				/* Inicialización y establecimiento de la estructura del servidor */
-				memset(&struct_servidor, 0, sizeof(struct_servidor));
-				struct_servidor.sun_family = AF_UNIX;
-				strncpy(struct_servidor.sun_path, argv, sizeof(struct_servidor.sun_path));
-
-				n = write(newsockfd, "telemetria", TAM);
+				n = write(newsockfd, "fin", 3);
 				error_escritura(n);
-
-				/* Ligadura del socket de servidor a una dirección */
-				if ((bind(socked_server_udp, (struct sockaddr *)&struct_servidor, SUN_LEN(&struct_servidor))) < 0)
-				{
-					perror("bind");
-					exit(1);
-				}
-
-
-				telemetria(socked_server_udp, struct_servidor);
-			}
-			else if (strcmp(buffer, "exit") == 0)
-			{
-				autenticado = 0; 				//Vuelvo a la espera de un nuevo usuario
 				printf("Fin de la conexion\n");
-				sleep(5);
-				//exit(0);
-			}
-			else
-			{
-				printf("Comando inexistente\n");
+				exit(0); 
 			}
 		}
+
+		pid = fork();
+		if (pid < 0)
+		{
+			perror("fork");
+			exit(1);
+		}
+
+		if (pid == 0) // proceso hijo
+		{
+			close(sockfd);
+
+			while (1)
+			{	
+				
+
+				memset(buffer, '\0', TAM);
+				printf("Ingrese la funcion que desea ejecutar\n");
+				printf("Funciones disponibles: update - scanning - telemetria \n");
+				printf(COLOR_RED "%s@%s:~ %s" COLOR_RESET, user_autenticado, host, COLOR_WHITE "Ingrese el mensaje a transmitir: " COLOR_RESET);
+				fgets(buffer, TAM - 1, stdin);
+				strtok(buffer, "\n");
+
+				if (strcmp(buffer, "update") == 0)	//Determinacion de que hacer
+				{
+					update(newsockfd);
+				}
+				else if (strcmp(buffer, "scanning") == 0)
+				{
+					scanning(newsockfd);
+				}
+				else if (strcmp(buffer, "telemetria") == 0)
+				{
+					int socked_server_udp;
+					struct sockaddr_un struct_servidor;
+
+					char argv[TAM] = {"./teludp"};
+
+					//Creacion del socket udp 
+					if ((socked_server_udp = socket(AF_UNIX, SOCK_DGRAM, 0)) < 0)
+					{
+						perror("socket");
+						exit(1);
+					}
+
+					//Remueve el nombre del archivo si existe
+					unlink(argv);
+
+					/* Inicialización y establecimiento de la estructura del servidor */
+					memset(&struct_servidor, 0, sizeof(struct_servidor));
+					struct_servidor.sun_family = AF_UNIX;
+					strncpy(struct_servidor.sun_path, argv, sizeof(struct_servidor.sun_path));
+
+					n = write(newsockfd, "telemetria", TAM);
+					error_escritura(n);
+
+					/* Ligadura del socket de servidor a una dirección */
+					if ((bind(socked_server_udp, (struct sockaddr *)&struct_servidor, SUN_LEN(&struct_servidor))) < 0)
+					{
+						perror("bind");
+						exit(1);
+					}
+
+
+					telemetria(socked_server_udp, struct_servidor);
+				}
+				
+				else
+				{
+					printf("Comando inexistente\n");
+				}
+			}
 	}
 
-		// else
-		// {
-		// 	printf("SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid);
-		// 	close(newsockfd);
-		// }
-	//}
+		else
+		{
+			close(newsockfd);
+		}
+	}
 	return 0;
 }
 
@@ -273,15 +265,15 @@ void update(int newsockfd)
 
 	memset(path, '\0', TAM);
 	strcpy(path, "./estacion_dir/firmware.bin");
-
 	n = write(newsockfd, "update", TAM);
 	error_escritura(n);
-
 	read_ack(newsockfd); 
-
+	printf("Enviando nueva actualizacion\n");
 	enviar_archivo(newsockfd, path, TAM); 
 	error_escritura(n);
+	read_ack(newsockfd);
 	close(newsockfd);
+	exit(0); //Mato al proceso hijo
 }
 
 /**
@@ -293,7 +285,7 @@ void telemetria(int socked_server_udp, struct sockaddr_un struct_servidor)
 	socklen_t tamano_direccion;
 	char buffer[TAM];
 	int n;
-	printf("Socket disponible: %s\n", struct_servidor.sun_path);
+	printf("Socket UDP disponible: %s\n", struct_servidor.sun_path);
 
 	tamano_direccion = sizeof(struct_servidor);
 	
@@ -307,6 +299,7 @@ void telemetria(int socked_server_udp, struct sockaddr_un struct_servidor)
 	{
 		printf("%s\n", buffer);
 	}
+	printf("Socket UDP close\n");
 	close(socked_server_udp);
 }
 

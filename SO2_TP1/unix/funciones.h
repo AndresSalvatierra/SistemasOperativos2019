@@ -68,7 +68,7 @@ void read_ack(int sockfd)
 void enviar_archivo(int sockfd,char *path,int tam)
 {
 	FILE *fp;
-	int size_file, n,read_size,packet_index=1;
+	int tam_file_send, n,tam_file,packet_index=1;
 	char buffer[tam];
 
 	fp=fopen(path,"rb");
@@ -77,12 +77,11 @@ void enviar_archivo(int sockfd,char *path,int tam)
 		printf("Error al abrir el file\n");
 		exit(1);
 	}
-
-	read_ack(sockfd);
+	
 	fseek(fp, 0, SEEK_END); //Posiciona el puntero en SEEK_END(final del file)
-	size_file = ftell(fp); //Obtengo el tamaño del file
+	tam_file_send = ftell(fp); //Obtengo el tamaño del file
 	fseek(fp, 0, SEEK_SET); //Posiciona el puntero en SEEK_SET(inicio del file)
-	n=write(sockfd, &size_file, sizeof(size_file)); //Envio el tamanio de file
+	n=write(sockfd, &tam_file_send, sizeof(tam_file_send)); //Envio el tamanio de file
 	error_escritura(n);
 
 	read_ack(sockfd);
@@ -90,17 +89,14 @@ void enviar_archivo(int sockfd,char *path,int tam)
 	while(!feof(fp))	//Si no llegue al final del archivo
 	{	
 		memset(buffer,'\0',sizeof(buffer));//Quiero mandar mas de un paquete lo reinicializo
-		read_size = fread(buffer, 1, sizeof(buffer), fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
+		tam_file = fread(buffer, 1, sizeof(buffer), fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
 
-		n=write(sockfd, buffer, read_size);
+		n=write(sockfd, buffer, tam_file);
 		usleep(70000);
 		error_escritura(n);
-		printf("Read size %i\n", read_size);
-		printf("n %i\n", n);
-		printf("Numero de paquete: %i \n",packet_index);
 		packet_index=packet_index+1;
 	}
-	fclose(fp);
+	fclose(fp);	
 }
 
 /**
@@ -111,16 +107,16 @@ void enviar_archivo(int sockfd,char *path,int tam)
  */
 void recibir_archivo(int sockfd,char *path, int tam)
 {
-	int recv_size = 0,n, size_file_recv = 0, read_size=0, write_size=0, packet_index = 1;
+	int tam_total = 0,n, tam_file_recv = 0, tam_file=0, write_size=0, paquete = 0;
 	char buffer[tam];
 
-	write_ack(sockfd);
-	n=read(sockfd, &size_file_recv, sizeof(size_file_recv)); //Obtengo el tamaño del file
+	
+	n=read(sockfd, &tam_file_recv, sizeof(tam_file_recv)); //Obtengo el tamaño del file
 	error_lectura(n);
 
 	write_ack(sockfd);
 
-	printf("%i\n",size_file_recv);
+	//printf("El tamanio del paquete a recibir %i\n",tam_file_recv);
 
 	FILE *fp = fopen(path, "wb");
 
@@ -130,26 +126,20 @@ void recibir_archivo(int sockfd,char *path, int tam)
 		exit(1);
 	}
 
-	while(recv_size<size_file_recv)
+	while(tam_total<tam_file_recv)
 	{	
 		memset(buffer,'\0',sizeof(buffer));
-		read_size = read(sockfd, buffer, sizeof(buffer));
-		printf("Packet number received: %i\n", packet_index);
-		printf("Packet size: %i\n", read_size);
-			//Write the currently read data into our image file
-		write_size = fwrite(buffer, 1, read_size, fp);
+		tam_file = read(sockfd, buffer, sizeof(buffer));
+		write_size = fwrite(buffer, 1, tam_file, fp);
 
-		if (read_size != write_size)
+		if (tam_file != write_size)
 		{
 			printf("Error en la actualizacion\n");
 			exit(1);
 		}
-		recv_size += read_size;
-		packet_index=packet_index+1;
-		printf("Total received image size: %i\n", recv_size);
-		printf(" \n");
-		printf(" \n");
+		tam_total += tam_file;
+		paquete=paquete+1;
 	}
 	fclose(fp);
-	printf("Image successfully Received!\n");
+	printf("Cantidad de paquetes recibidos: %i\n", paquete);
 }

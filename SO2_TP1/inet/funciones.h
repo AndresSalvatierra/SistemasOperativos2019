@@ -89,17 +89,17 @@ void enviar_archivo(int sockfd,char *path,int tam)
 	while(!feof(fp))
 	{	
 		memset(buffer,'\0',sizeof(buffer));//Quiero mandar mas de un paquete lo reinicializo
-		printf("FEOF %i\n",feof(fp));
+		//printf("FEOF %i\n",feof(fp));
 		read_size = fread(buffer, 1, sizeof(buffer), fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
 
 		n = write(sockfd, buffer, read_size);
 		usleep(70000);
 		error_escritura(n);
-		printf("Read size %i\n", read_size);
-		printf("n %i\n", n);
-		printf("Numero de paquete: %i \n",packet_index);
+		//printf("Read size %i\n", read_size);
+		//printf("n %i\n", n);
 		packet_index=packet_index+1;
 	}
+	printf("Numero de paquetes: %i \n",packet_index);
 	fclose(fp);
 }
 
@@ -135,13 +135,13 @@ void recibir_archivo(int sockfd,char *path, int tam)
 		memset(buffer,'\0',sizeof(buffer));
 		read_size = read(sockfd, buffer, sizeof(buffer));
 
-		printf("Packet number received: %i\n", packet_index);
-		printf("Packet size: %i\n", read_size);
+		//printf("Packet number received: %i\n", packet_index);
+		//printf("Packet size: %i\n", read_size);
 		//write_ack(sockfd);
 			//Write the currently read data into our image file
 		write_size = fwrite(buffer, 1, read_size, fp);
 
-		printf("Written image size: %i\n", write_size);
+		//printf("Written image size: %i\n", write_size);
 
 		if (read_size != write_size)
 		{
@@ -152,10 +152,10 @@ void recibir_archivo(int sockfd,char *path, int tam)
 			//Increment the total number of bytes read
 		recv_size += read_size;
 		packet_index=packet_index+1;
-		printf("Total received image size: %i\n", recv_size);
-		printf(" \n");
-		printf(" \n");
+		// printf("Total received image size: %i\n", recv_size);
+		// printf(" \n");
+		// printf(" \n");
 	}
 	fclose(fp);
-	printf("Image successfully Received!\n");
+	printf("Archivo recibido\n");
 }
