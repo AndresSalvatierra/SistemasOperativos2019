@@ -3,7 +3,7 @@ void read_ack(int sock);
 void error_escritura(int n);
 void error_lectura(int n);
 void enviar_archivo(int sockfd,char *path,int tam);
-void recibir_archivo(int sockfd,char *path, int tam);
+void recibir_archivo(int sockfd,char *path, int tam,int tipo);
 
 #define TAM 1024
 /**
@@ -61,8 +61,9 @@ void read_ack(int sockfd)
 /**
  * @brief Funcion encargada del envio de archivos, se envia primero el tamaño del tamaño a enviar y se sigue enviando hasta llegar al final del archivo.
  * 		  Es utilizada en la funcion update y en la funcion scanning.
- * @param sockfd, path, tam. Es el socket por el cual se lleva a cabo la comunicacion, el path en el cual tengo ubicado el archivo
- * 							 y por ultimo el tamaño maximo del buffer donde voy a cargar la informacion a enviar.
+ * @param sockfd, path,  tipo. Es el socket por el cual se lleva a cabo la comunicacion, el path en el cual voy a guardar el archivo,
+ * 							 el tamaño maximo del buffer donde voy a cargar la informacion a enviar y el tipo de funcion que lo llama simplemente para impresiones
+ * 							(1) scanning (0) update
  */
 void enviar_archivo(int sockfd,char *path,int tam)
 {
@@ -91,7 +92,6 @@ void enviar_archivo(int sockfd,char *path,int tam)
 		tam_file = fread(buffer, 1, sizeof(buffer), fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
 
 		n=write(sockfd, buffer, tam_file);
-		usleep(70000);
 		error_escritura(n);
 		paquete=paquete+1;
 	}
@@ -104,9 +104,9 @@ void enviar_archivo(int sockfd,char *path,int tam)
  * @param sockfd, path, tam. Es el socket por el cual se lleva a cabo la comunicacion, el path en el cual voy a guardar el archivo
  * 							 y por ultimo el tamaño maximo del buffer donde voy a cargar la informacion a enviar.
  */
-void recibir_archivo(int sockfd,char *path, int tam)
+void recibir_archivo(int sockfd,char *path, int tam, int tipo)
 {
-	int tam_total = 0,n, tam_file_recv = 0, tam_file=0, write_size=0, paquete = 0;
+	int tam_total = 0,n, tam_file_recv = 0, tam_file=0,paquete = 0;
 	char buffer[tam];
 
 	
@@ -115,7 +115,10 @@ void recibir_archivo(int sockfd,char *path, int tam)
 
 	write_ack(sockfd);
 
-	//printf("El tamanio del paquete a recibir %i\n",tam_file_recv);
+	if(tipo==1)
+	{
+		printf("El tamanio del paquete a recibir %i\n",tam_file_recv);
+	}
 
 	FILE *fp = fopen(path, "wb");
 
@@ -129,17 +132,16 @@ void recibir_archivo(int sockfd,char *path, int tam)
 	{	
 		memset(buffer,'\0',sizeof(buffer));
 		tam_file = read(sockfd, buffer, sizeof(buffer));
-		write_size = fwrite(buffer, 1, tam_file, fp);
+		fwrite(buffer, 1, tam_file, fp);
 
-		if (tam_file != write_size)
-		{
-			printf("Error en la actualizacion\n");
-			exit(1);
-		}
 		tam_total += tam_file;
 		paquete=paquete+1;
 	}
 	fclose(fp);
-	printf("Cantidad de paquetes recibidos: %i\n", paquete);
+	
+	if(tipo==1)
+	{
+		printf("Cantidad de paquetes recibidos: %i\n", paquete);
+	}
 	printf("Archivo recibido\n");
 }

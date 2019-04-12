@@ -103,7 +103,7 @@ void update(int sockfd, char *argv[])
 	FILE *fp;
 	strcpy(path,"./satelite_dir/firmware_cliente.bin");
 	write_ack(sockfd);
-	recibir_archivo(sockfd,path,TAM);
+	recibir_archivo(sockfd,path,TAM,0);
 	fp = fopen(path, "rb");
 	fread(buffer, 1, sizeof(buffer) - 1, fp);
 	strcpy(satelite.version,strtok(buffer,"\n")); //Actualizo la version de firmware
