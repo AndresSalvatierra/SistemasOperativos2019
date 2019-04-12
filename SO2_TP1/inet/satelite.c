@@ -184,7 +184,6 @@ void update(int sockfd, char *argv[])
 	char buffer[TAM],path[TAM];
 	FILE *fp;
 	strcpy(path,"./satelite_dir/firmware_cliente.bin");
-	printf("HOLA");
 	write_ack(sockfd);
 	recibir_archivo(sockfd,path,TAM);
 	fp = fopen(path, "rb");
@@ -192,8 +191,10 @@ void update(int sockfd, char *argv[])
 	strcpy(satelite.version,strtok(buffer,"\n")); //Actualizo la version de firmware
 	fclose(fp);
 	printf("Firmware actualizado, reiniciando...\n");
+	write_ack(sockfd);
 	close(sockfd);
 	execvp(argv[0],argv); //Reinicio
+	exit(0);
 }
 
 

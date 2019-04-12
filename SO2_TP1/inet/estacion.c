@@ -39,7 +39,7 @@ int main( int argc, char *argv[] )
 	strcpy(usuarios[4].user, "floki");
 	strcpy(usuarios[4].pass, "13579");
 
-	int sockfd, newsockfd, puerto,  flag_update, n,autenticado=0;
+	int sockfd, newsockfd, puerto,  pid, n,autenticado=0;
 	unsigned int clilen;
 	char buffer[TAM], host[TAM], user_autenticado[20];
 	struct sockaddr_in serv_addr, cli_addr;
@@ -76,37 +76,38 @@ int main( int argc, char *argv[] )
 			exit( 1 );
 		}
 
-		flag_update=0;
-		// pid = fork(); 
-		// if ( pid < 0 ) {
-		// 	perror( "fork" );
-		// 	exit( 1 );
-		// }
-
-		// if ( pid == 0 ) // Proceso hijo
-		// {  
-		// 	close( sockfd );
-
-		while ( flag_update==0 ) 
+		while (autenticado == 0)	//Si no estoy autenticado
 		{
-			while (autenticado == 0)	//Si no estoy autenticado
+			if (autenticacion(user_autenticado)) //Autenticacion valida
 			{
-				if (autenticacion(user_autenticado))	//Autenticacion valida
-				{
-					autenticado = 1;
-				}
-				else	//Se excedieron los intentos, cierro el programa
-				{
-					n = write(newsockfd, "fin", 3);
-					error_escritura(n);
-					printf("Fin de la conexion\n");
-					exit(0); 
-				}
+				autenticado = 1;
 			}
+			else								//Se excedieron los intentos, cierro el programa
+			{
+				n = write(newsockfd, "fin", 3);
+				error_escritura(n);
+				printf("Fin de la conexion\n");
+				exit(0); 
+			}
+		}
+
+		pid = fork(); 
+		if ( pid < 0 ) 
+		{
+			perror( "fork" );
+			exit( 1 );
+		}
+
+		if ( pid == 0 ) // Proceso hijo
+		{  
+			close( sockfd );
+
+		while (1) 
+		{
+			
 			memset(buffer,'\0',TAM);
 			printf("Ingrese la funcion que desea ejecutar\n");
 			printf("Funciones disponibles: update - scanning - telemetria \n");
-			printf("exit en caso de salir\n");
 			printf(COLOR_RED "%s@%s:~ %s" COLOR_RESET, user_autenticado, host, COLOR_WHITE "Ingrese el mensaje a transmitir: " COLOR_RESET);
 			fgets(buffer, TAM - 1, stdin);
 			strtok(buffer, "\n");
@@ -114,7 +115,6 @@ int main( int argc, char *argv[] )
 			if (strcmp(buffer, "update") == 0)	//Determinacion de que hacer
 			{
 				update(newsockfd);
-				flag_update=1;
 			}
 			else if (strcmp(buffer, "scanning") == 0)
 			{
@@ -151,28 +151,21 @@ int main( int argc, char *argv[] )
 
 				printf( "Socket disponible: %d\n", ntohs(struct_servidor.sin_port) );
 
-				// n = write( newsockfd, "telemetria", TAM);
-				// error_escritura(n);
 
 				telemetria(socked_server_udp,struct_servidor);
 			}
-			else if (strcmp(buffer, "exit") == 0)
-			{
-				printf("Fin de la conexion\n");
-				autenticado=0; //Vuelvo a la espera de un nuevo usuario
-				sleep(5);
-			}
+		
 			else
 			{
 				printf("Comando inexistente\n");
 			}
 		}
 	}
-	// 	else {
-	// 		printf( "SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid );
-	// 		close( newsockfd );
-	// 	}
-	// }
+		else {
+			printf( "SERVIDOR: Nuevo cliente, que atiende el proceso hijo: %d\n", pid );
+			close( newsockfd );
+		}
+	}
 	return 0; 
 } 
 
@@ -259,16 +252,42 @@ void update(int newsockfd)
 
 	memset(path,'\0',TAM);
 	strcpy(path,"./estacion_dir/firmware.bin");
-
 	n = write( newsockfd, "update", TAM);
 	error_escritura(n);
-	
 	read_ack(newsockfd); 
-
+	printf("Enviando nueva actualizacion\n");
 	enviar_archivo(newsockfd,path,TAM);
-
+	error_escritura(n);
+	read_ack(newsockfd);
+	close(newsockfd);
+	exit(0); //Mato al proceso hijo
 }
 
+/**
+ * @brief Funcion encargada de la recepcion de la informacion del satelite.
+ * @param socket udp y estructura del socket
+ */
+void telemetria(int socked_server_udp,struct sockaddr_in struct_servidor)
+{	
+	socklen_t tamano_direccion;
+	char buffer[TAM];
+	int n;
+	printf("Socket UDP disponible: %i\n", socked_server_udp);
+	tamano_direccion = sizeof( struct_servidor );
+
+	memset(buffer,'\0',TAM);
+	n=recvfrom ( socked_server_udp, (void *) buffer, TAM-1, 0, (struct sockaddr *) &struct_servidor, &tamano_direccion);
+	if(n<0)
+	{
+		perror("recvfrom");
+	}
+	else
+	{
+		printf("%s\n", buffer);	
+	}
+	printf("Socket UDP close\n");
+	close(socked_server_udp);
+}
 
 /**
  * @brief Funcion encargada de la recepcion de la imagen enviada por el satelite.
@@ -285,30 +304,4 @@ void scanning(int newsockfd)
 	error_escritura(n);
 	read_ack(newsockfd); 
 	recibir_archivo(newsockfd,path,1448);
-}
-
-
-/**
- * @brief Funcion encargada de la recepcion de la informacion del satelite.
- * @param socket udp y estructura del socket
- */
-void telemetria(int socked_server_udp,struct sockaddr_in struct_servidor)
-{	
-	socklen_t tamano_direccion;
-	char buffer[TAM];
-	int n;
-	
-	tamano_direccion = sizeof( struct_servidor );
-
-	memset(buffer,'\0',TAM);
-	n=recvfrom ( socked_server_udp, (void *) buffer, TAM-1, 0, (struct sockaddr *) &struct_servidor, &tamano_direccion);
-	if(n<0)
-	{
-		perror("recvfrom");
-	}
-	else
-	{
-		printf("%s\n", buffer);	
-	}
-	close(socked_server_udp);
 }

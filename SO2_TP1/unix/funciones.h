@@ -68,7 +68,7 @@ void read_ack(int sockfd)
 void enviar_archivo(int sockfd,char *path,int tam)
 {
 	FILE *fp;
-	int tam_file_send, n,tam_file,packet_index=1;
+	int tam_file_send, n,tam_file,paquete=1;
 	char buffer[tam];
 
 	fp=fopen(path,"rb");
@@ -94,7 +94,7 @@ void enviar_archivo(int sockfd,char *path,int tam)
 		n=write(sockfd, buffer, tam_file);
 		usleep(70000);
 		error_escritura(n);
-		packet_index=packet_index+1;
+		paquete=paquete+1;
 	}
 	fclose(fp);	
 }
