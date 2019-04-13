@@ -32,7 +32,7 @@ void scanning(int sockfd);
 
 int main(int argc, char *argv[])
 {	
-	int sockfd, servlen,n;
+	int sockfd, servlen;
 	struct sockaddr_un serv_addr;
 	char buffer[TAM];
 	if (argc < 2)
@@ -68,8 +68,8 @@ int main(int argc, char *argv[])
 	while (1)
 	{
 		memset(buffer, '\0', TAM); 
-		n = read( sockfd, buffer, TAM);//Espera instrucciones del server
-		error_lectura(n);
+		
+		error_lectura(read( sockfd, buffer, TAM));//Espera instrucciones del server);
 
 		if(strcmp(buffer,"update")==0)
 			{	
@@ -123,7 +123,6 @@ void info_satelite()
 {
 	char parameter[TAM]={0},pid[10]={0},buffer[TAM]={0};
 	FILE *fp;
-	int indice=0;
 	memset( satelite.id, '\0', sizeof(satelite.id));
 	memset( satelite.uptime, '\0', sizeof(satelite.uptime));
 	memset( satelite.memoria, '\0', sizeof(satelite.memoria));
@@ -148,8 +147,10 @@ void info_satelite()
 	memset(buffer,'\0',sizeof(buffer));
 	fread(buffer, 1, sizeof(buffer) - 1, fp);
 	char *token=strtok(buffer," ");
+	fclose(fp);
 	
 	if(token != NULL){
+		int indice=0;
 		while(token != NULL){
 			if(indice==0)
 				strcpy(satelite.memoria,token);

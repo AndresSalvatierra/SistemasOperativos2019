@@ -68,7 +68,7 @@ void read_ack(int sockfd)
 void enviar_archivo(int sockfd,char *path,int tam)
 {
 	FILE *fp;
-	int tam_file_send, n,tam_file,paquete=1;
+	int tam_file_send, n;//paquete=1;
 	char buffer[tam];
 
 	fp=fopen(path,"rb");
@@ -89,11 +89,10 @@ void enviar_archivo(int sockfd,char *path,int tam)
 	while(!feof(fp))	//Si no llegue al final del archivo
 	{	
 		memset(buffer,'\0',sizeof(buffer));//Quiero mandar mas de un paquete lo reinicializo
-		tam_file = fread(buffer, 1, sizeof(buffer), fp); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer
 
-		n=write(sockfd, buffer, tam_file);
+		n=write(sockfd, buffer, fread(buffer, 1, sizeof(buffer), fp)); //Obtengo el tamaño a mandar y lo que voy a mandar guardo en buffer)
 		error_escritura(n);
-		paquete=paquete+1;
+		//paquete=paquete+1;
 	}
 	fclose(fp);	
 }

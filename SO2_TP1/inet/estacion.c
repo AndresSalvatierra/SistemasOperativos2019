@@ -39,7 +39,7 @@ int main( int argc, char *argv[] )
 	strcpy(usuarios[4].user, "floki");
 	strcpy(usuarios[4].pass, "13579");
 
-	int sockfd, newsockfd, puerto,  pid, n,autenticado=0;
+	int sockfd, puerto, n,autenticado=0;
 	unsigned int clilen;
 	char buffer[TAM], host[TAM], user_autenticado[20];
 	struct sockaddr_in serv_addr, cli_addr;
@@ -70,7 +70,7 @@ int main( int argc, char *argv[] )
 	clilen = sizeof( cli_addr );
 
 	while( 1 ) {
-		newsockfd = accept( sockfd, (struct sockaddr *) &cli_addr, &clilen );
+		int newsockfd = accept( sockfd, (struct sockaddr *) &cli_addr, &clilen );
 		if ( newsockfd < 0 ) {
 			perror( "accept" );
 			exit( 1 );
@@ -91,7 +91,7 @@ int main( int argc, char *argv[] )
 			}
 		}
 
-		pid = fork(); 
+		int pid = fork(); 
 		if ( pid < 0 ) 
 		{
 			perror( "fork" );
