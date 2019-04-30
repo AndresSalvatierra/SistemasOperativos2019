@@ -251,7 +251,7 @@ void update(int newsockfd)
 	char path[TAM];
 
 	memset(path,'\0',TAM);
-	strcpy(path,"./estacion_dir/firmware.bin");
+	strcpy(path,"./estacion_dir/satelite.bin");
 	n = write( newsockfd, "update", TAM);
 	error_escritura(n);
 	read_ack(newsockfd); 
