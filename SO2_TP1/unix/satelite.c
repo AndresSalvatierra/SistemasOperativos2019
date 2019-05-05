@@ -127,14 +127,15 @@ void info_satelite()
 	memset( satelite.uptime, '\0', sizeof(satelite.uptime));
 	memset( satelite.memoria, '\0', sizeof(satelite.memoria));
 	memset( satelite.cpu, '\0', sizeof(satelite.cpu));
+	memset( satelite.version,'\0', sizeof(satelite.version));
 	strcpy(satelite.id,"65096A"); //Id del satelite Asterix
+	strcpy(satelite.version,"Version0.0"); //Id del satelite Asterix
 	
-	
-	fp = fopen("./satelite_dir/firmware_cliente.bin", "rb");
-	memset(buffer,'\0',sizeof(buffer));
-	fread(buffer, 1, sizeof(buffer) - 1, fp);
-	strcpy(satelite.version,strtok(buffer,"\n"));
-	fclose(fp);
+	// fp = fopen("./firmware_cliente.bin", "rb");
+	// memset(buffer,'\0',sizeof(buffer));
+	// fread(buffer, 1, sizeof(buffer) - 1, fp);
+	// strcpy(satelite.version,strtok(buffer,"\n"));
+	// fclose(fp);
 
 	system("rm ./satelite_dir/info_cliente");
 	strcpy(parameter,"ps -Ao vsize,pcpu,pid | grep ");

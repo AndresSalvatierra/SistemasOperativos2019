@@ -7,4 +7,4 @@ satelite : satelite.c
 	gcc -Wall -Werror -pedantic -o satelite satelite.c
 
 clean :
-	rm estacion satelite \
+	rm satelite estacion \

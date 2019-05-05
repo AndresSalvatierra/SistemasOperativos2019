@@ -1,9 +1,9 @@
 #Makefile de Trabajo Practico N°2 de Sistemas Operativos
 
-all: netcdf
+all: matriz
 
-netcdf : readNetcdf.c
-	gcc -Wall -Werror -pedantic -lm -lnetcdf -o matriz readNetcdf.c
+matriz : readNetcdf.c
+	gcc -O3 -o matriz readNetcdf.c `nc-config --cflags --libs`
 
 clean:
 	rm matriz \
