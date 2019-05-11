@@ -8,8 +8,8 @@
 #define ERRCODE 2
 #define ERR(e) {printf("Error: %s\n", nc_strerror(e)); exit(ERRCODE);}
 
-#define FOTO "/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP2/tierra.nc"
-#define FOTO_CONV "/home/andres/Facultad/SOII/Andres/Practico/SistemasOperativos2019/SO2_TP2/tierra_conv.nc"
+#define FOTO "./tierra.nc"
+#define FOTO_CONV "./tierra_conv.nc"
 
 #define NX_T 21696
 #define NY_T 21696
@@ -23,8 +23,7 @@
 void conv(int i,int j,float *data_in,float *resultante, float mat_w [WX][WY]);
 
 int main()
-{
-        
+{        
     float mat_w[WX][WY]={{-1.0,-1.0,-1.0},{-1.0,8.0,-1.0},{-1.0,-1.0,-1.0}};
     int x, y, retval, ncid,varid, nconv,nconvarid,x_dimid, y_dimid;
     size_t start[NDIMS], count[NDIMS];
@@ -66,7 +65,7 @@ int main()
             if(data_in[i*NX_T + j]==-1)
             {
                 data_in[i*NX_T + j]=(float)(0.0/0.0);
-            }            
+            }                       
         }
     }
 
@@ -84,27 +83,36 @@ int main()
 
     free(data_in);
 
-    if ((retval = nc_create(FOTO_CONV, NC_CLOBBER, &nconv)))
-        ERR(retval);
-    if ((retval = nc_def_dim(nconv, "x", NX_T, &x_dimid)))
-        ERR(retval);
-    if ((retval = nc_def_dim(nconv, "y", NY_T, &y_dimid)))
-        ERR(retval);
+    if ((retval = nc_open(FOTO_CONV, NC_WRITE , &nconv)))
+            ERR(retval);
     
-    dimids[0] = x_dimid;
-    dimids[1] = y_dimid;
-
-    if ((retval = nc_def_var(nconv, "CMI", NC_FLOAT, NDIMS, dimids, &nconvarid)))
+    if ((retval = nc_inq_varid(nconv, "CMI", &nconvarid)))
         ERR(retval);
-
-    if ((retval = nc_enddef(nconv)))
-        ERR(retval);
-
     if((retval=nc_put_vara_float(nconv,nconvarid,start, count,resultante)))
         ERR(retval);
-
     if ((retval = nc_close(nconv)))
-        ERR(retval); 
+        ERR(retval);
+    // if ((retval = nc_create(FOTO_CONV, NC_CLOBBER, &nconv)))
+    //     ERR(retval);
+    // if ((retval = nc_def_dim(nconv, "x", NX_T, &x_dimid)))
+    //     ERR(retval);
+    // if ((retval = nc_def_dim(nconv, "y", NY_T, &y_dimid)))
+    //     ERR(retval);
+    
+    // dimids[0] = x_dimid;
+    // dimids[1] = y_dimid;
+
+    // if ((retval = nc_def_var(nconv, "CMI", NC_FLOAT, NDIMS, dimids, &nconvarid)))
+    //     ERR(retval);
+
+    // if ((retval = nc_enddef(nconv)))
+    //     ERR(retval);
+
+    // if((retval=nc_put_vara_float(nconv,nconvarid,start, count,resultante)))
+    //     ERR(retval);
+
+    // if ((retval = nc_close(nconv)))
+    //     ERR(retval); 
     
     free(resultante);
     
