@@ -14,14 +14,12 @@
 #define NX_T 21696
 #define NY_T 21696
 
-#define LIMIT NX_T/NX
 #define NDIMS 2
 
 /*Matriz W*/
 #define WX 3
 #define WY 3
 
-//int escribir_nc(float data_out[][NY], int punterox, int punteroy);
 void conv(int i,int j,float *data_in,float *resultante, float mat_w [WX][WY]);
 
 int main()
@@ -53,7 +51,14 @@ int main()
     if ((retval = nc_close(ncid)))
         ERR(retval);
 
-    //#pragma omp parallel for collapse(2) num_threads(4)
+    struct timespec inicio, fin;
+
+    if( clock_gettime( CLOCK_MONOTONIC_RAW, &inicio) == -1 ) {
+      perror( "clock gettime" );
+      exit( EXIT_FAILURE );
+    }
+   
+    #pragma omp parallel for num_threads(4)
     for(int i=0; i<NX_T; i=i+1)
     {
         for(int j=0; j<NY_T; j=j+1)
@@ -61,9 +66,19 @@ int main()
             if(data_in[i*NX_T + j]==-1)
             {
                 data_in[i*NX_T + j]=(float)(0.0/0.0);
-            }
+            }            
         }
     }
+
+    if( clock_gettime( CLOCK_MONOTONIC_RAW, &fin) == -1 ) {
+      perror( "clock gettime" );
+      exit( EXIT_FAILURE );
+    }
+
+    u_int64_t delta_us = (fin.tv_sec - inicio.tv_sec) * 1000000 + (fin.tv_nsec - inicio.tv_nsec) / 1000;
+    u_int64_t total_time_s = delta_us/1000000;
+    u_int64_t total_time_ms = (delta_us%1000000)/1000;
+    printf("TERMINO DESCARGA EN %lds %ldms %ldus\n",total_time_s, total_time_ms, delta_us%1000);
     
     conv(1,1,data_in,resultante,mat_w);
 
@@ -98,7 +113,14 @@ int main()
 
 void conv(int x, int y,float *data_in,float *resultante, float mat_w [WX][WY])
 {   
-    #pragma omp parallel for collapse(2) num_threads(10000)
+    struct timespec start, end;
+
+    if( clock_gettime( CLOCK_MONOTONIC_RAW, &start) == -1 ) {
+      perror( "clock gettime" );
+      exit( EXIT_FAILURE );
+    }
+
+    #pragma omp parallel for num_threads(4)
     for(int i=x; i<NX_T-1; i=i+1)
     {   
 
@@ -109,4 +131,29 @@ void conv(int x, int y,float *data_in,float *resultante, float mat_w [WX][WY])
                                 data_in[(i+1)*NX_T + (j-1)]*mat_w[2][0]+ data_in[(i+1)*NX_T + j]*mat_w[2][1] +data_in[(i+1)*NX_T + (j+1)]*mat_w[2][2])*0.00031746;
         }
     }
+    
+    if( clock_gettime( CLOCK_MONOTONIC_RAW, &end) == -1 ) {
+      perror( "clock gettime" );
+      exit( EXIT_FAILURE );
+    }
+
+   u_int64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
+   u_int64_t total_time_s = delta_us/1000000;
+   u_int64_t total_time_ms = (delta_us%1000000)/1000;
+   printf("TERMINO DESCARGA EN %lds %ldms %ldus\n",total_time_s, total_time_ms, delta_us%1000);
 }
+
+//Acceso ssh Estudiante5@200.16.30.253
+//       pass BER5!a4!
+//Instalar el script de NETCDF en el cluster
+
+//cpu info-> 16 cores, te genera dos thread por cada core fisico. Hay cambio de contexto todo el tiempo. Aca no hay cambio de contexto, no hace falta, lo retrasa. Hace que sea menos eficiente.
+//Set de instrucciones AVX-512 registros de 512 bit para registros flotantes
+//Source a donde estan los opt/intel/compilers_and_libraries_2018.5.../linux/bin/compilervars.sh -arch intel64 -platform linux
+//                                                                                y compilervars_global.sh
+//ark intel
+
+
+//Compilar con icc
+//chunk
+//icc -qopenmp -xCORE_AVX2(o el 512 probar) archivo.c -o ejecutable

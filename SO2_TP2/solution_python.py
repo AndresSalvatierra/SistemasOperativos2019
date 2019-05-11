@@ -24,13 +24,18 @@ Abrir el dataset como una matriz XARRAY y guardar la matriz CMI
 DS = Dataset(dataDIR)
 f = DS.variables['CMI']
 # print f.shape
-# print f
+#print f
 
 h = f[0:21696,0:21696]
+# maximo=0
+# for i in range(0, 21696)
+#     for j in range (0,21696)
+#         if(h[i][j]>maximo):
+#             maximo=h[i][j]
 #g = convolve(h,w)
-#print h
-#plt.imshow(h, cmap='RdBu')
-plt.imshow(h[0:19000,0:19000],cmap=plt.cm.get_cmap('hot',2))
+
+plt.imshow(h[0:10000,0:10000])#, cmap='RdBu')
+#plt.imshow(h[0:10000,0:10000],cmap=plt.cm.get_cmap('hot',2))
 #plt.imshow(h, cmap='gray')
 
 
@@ -52,7 +57,7 @@ plt.imshow(h[0:19000,0:19000],cmap=plt.cm.get_cmap('hot',2))
 #plt.colorbar()
 #plt.imshow(lum_img, cmap="hot")
 #plt.imshow(lum_img)
-plt.savefig('pop5.png',format="png",dpi=1200)
+plt.savefig('pip7.png',format="png",dpi=1200)
 #plt.show()
 '''
 matrix = np.array([[10,2,2,2,2],[2,10,2,2,2],[2,2,10,2,2],[2,2,2,10,2],[2,2,2,2,10]])
