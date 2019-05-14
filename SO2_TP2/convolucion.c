@@ -25,9 +25,9 @@ void conv(int i,int j,float *data_in,float *resultante, float mat_w [WX][WY]);
 int main()
 {        
     float mat_w[WX][WY]={{-1.0,-1.0,-1.0},{-1.0,8.0,-1.0},{-1.0,-1.0,-1.0}};
-    int x, y, retval, ncid,varid, nconv,nconvarid,x_dimid, y_dimid;
+    int /*x, y,*/ retval, ncid,varid, nconv,nconvarid;//,x_dimid, y_dimid;
     size_t start[NDIMS], count[NDIMS];
-    int dimids[NDIMS];
+    //int dimids[NDIMS];
 
     float *resultante=malloc(NX_T*NY_T*sizeof(float));
     float *data_in=malloc(NX_T*NY_T*sizeof(float));
@@ -122,7 +122,7 @@ int main()
 void conv(int x, int y,float *data_in,float *resultante, float mat_w [WX][WY])
 {   
     struct timespec start, end;
-
+    double start_time = omp_get_wtime();
     if( clock_gettime( CLOCK_MONOTONIC_RAW, &start) == -1 ) {
       perror( "clock gettime" );
       exit( EXIT_FAILURE );
@@ -144,11 +144,12 @@ void conv(int x, int y,float *data_in,float *resultante, float mat_w [WX][WY])
       perror( "clock gettime" );
       exit( EXIT_FAILURE );
     }
-
+   double time_omp=omp_get_wtime()-start_time;
    u_int64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
    u_int64_t total_time_s = delta_us/1000000;
    u_int64_t total_time_ms = (delta_us%1000000)/1000;
    printf("TERMINO DESCARGA EN %lds %ldms %ldus\n",total_time_s, total_time_ms, delta_us%1000);
+   printf("%f OMP\n",time_omp);
 }
 
 //Acceso ssh Estudiante5@200.16.30.253
