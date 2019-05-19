@@ -13,3 +13,17 @@ clean:
       	rm matrizicc matrizgcc \
 
 
+#Acceso ssh Estudiante5@200.16.30.253
+#       pass BER5!a4!
+#Instalar el script de NETCDF en el cluster
+
+#cpu info-> 16 cores, te genera dos thread por cada core fisico. Hay cambio de contexto todo el tiempo. Aca no hay cambio de contexto, no hace falta, lo retrasa. Hace que sea menos eficiente.
+#Set de instrucciones AVX-512 registros de 512 bit para registros flotantes
+#Source a donde estan los opt/intel/compilers_and_libraries_2018.5.../linux/bin/compilervars.sh -arch intel64 -platform linux
+#                                                                                y compilervars_global.sh
+#ark intel
+
+
+#Compilar con icc
+#chunk
+#icc -qopenmp -xCORE_AVX2(o el 512 probar) archivo.c -o ejecutable

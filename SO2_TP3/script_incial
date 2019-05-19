@@ -1,0 +1,9 @@
+apt-get update
+apt-get remove apache2
+apt-get install lighttpd
+/etc/init.d/lighttpd start
+cd var/www/html/
+nano index.lighttpd.html
+wget https://github.com/BlackrockDigital/startbootstrap-agency/archive/gh-pages.zip
+unzip gh-pages.zip
+renombrar archivo

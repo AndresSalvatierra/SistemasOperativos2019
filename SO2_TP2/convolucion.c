@@ -50,14 +50,8 @@ int main()
     if ((retval = nc_close(ncid)))
         ERR(retval);
 
-    struct timespec inicio, fin;
-
-    if( clock_gettime( CLOCK_MONOTONIC_RAW, &inicio) == -1 ) {
-      perror( "clock gettime" );
-      exit( EXIT_FAILURE );
-    }
-   
-    #pragma omp parallel for num_threads(4)
+    double inicio = omp_get_wtime();
+    #pragma omp parallel for num_threads(128)
     for(int i=0; i<NX_T; i=i+1)
     {
         for(int j=0; j<NY_T; j=j+1)
@@ -68,16 +62,8 @@ int main()
             }                       
         }
     }
-
-    if( clock_gettime( CLOCK_MONOTONIC_RAW, &fin) == -1 ) {
-      perror( "clock gettime" );
-      exit( EXIT_FAILURE );
-    }
-
-    u_int64_t delta_us = (fin.tv_sec - inicio.tv_sec) * 1000000 + (fin.tv_nsec - inicio.tv_nsec) / 1000;
-    u_int64_t total_time_s = delta_us/1000000;
-    u_int64_t total_time_ms = (delta_us%1000000)/1000;
-    printf("TERMINO DESCARGA EN %lds %ldms %ldus\n",total_time_s, total_time_ms, delta_us%1000);
+    double fin=omp_get_wtime()-inicio;
+    printf("%f Tiempo que el pasaje a nan\n",fin);
     
     conv(1,1,data_in,resultante,mat_w);
 
@@ -121,14 +107,9 @@ int main()
 
 void conv(int x, int y,float *data_in,float *resultante, float mat_w [WX][WY])
 {   
-    struct timespec start, end;
     double start_time = omp_get_wtime();
-    if( clock_gettime( CLOCK_MONOTONIC_RAW, &start) == -1 ) {
-      perror( "clock gettime" );
-      exit( EXIT_FAILURE );
-    }
 
-    #pragma omp parallel for num_threads(4)
+    #pragma omp parallel for num_threads(128)
     for(int i=x; i<NX_T-1; i=i+1)
     {   
 
@@ -140,29 +121,6 @@ void conv(int x, int y,float *data_in,float *resultante, float mat_w [WX][WY])
         }
     }
     
-    if( clock_gettime( CLOCK_MONOTONIC_RAW, &end) == -1 ) {
-      perror( "clock gettime" );
-      exit( EXIT_FAILURE );
-    }
    double time_omp=omp_get_wtime()-start_time;
-   u_int64_t delta_us = (end.tv_sec - start.tv_sec) * 1000000 + (end.tv_nsec - start.tv_nsec) / 1000;
-   u_int64_t total_time_s = delta_us/1000000;
-   u_int64_t total_time_ms = (delta_us%1000000)/1000;
-   printf("TERMINO DESCARGA EN %lds %ldms %ldus\n",total_time_s, total_time_ms, delta_us%1000);
-   printf("%f OMP\n",time_omp);
+   printf("%f Tiempo que demora la convolucion\n",time_omp);
 }
-
-//Acceso ssh Estudiante5@200.16.30.253
-//       pass BER5!a4!
-//Instalar el script de NETCDF en el cluster
-
-//cpu info-> 16 cores, te genera dos thread por cada core fisico. Hay cambio de contexto todo el tiempo. Aca no hay cambio de contexto, no hace falta, lo retrasa. Hace que sea menos eficiente.
-//Set de instrucciones AVX-512 registros de 512 bit para registros flotantes
-//Source a donde estan los opt/intel/compilers_and_libraries_2018.5.../linux/bin/compilervars.sh -arch intel64 -platform linux
-//                                                                                y compilervars_global.sh
-//ark intel
-
-
-//Compilar con icc
-//chunk
-//icc -qopenmp -xCORE_AVX2(o el 512 probar) archivo.c -o ejecutable
