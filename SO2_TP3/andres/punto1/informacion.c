@@ -11,7 +11,6 @@
 struct embebido		//Informacion referida al embebido
 {
 	char uptime[20];	
-	char hora_actual[20];
 	char cpu[20];
 	char memoria[20];
 };
@@ -31,12 +30,13 @@ int main(int argc, char *argv[])
 	minuto=tlocal->tm_min;
 	segundo=tlocal->tm_sec;	
 
-    info_embebido();
+	printf("Content-Type: text/plain;charset=us-ascii\n\n");
+    
+	info_embebido();
 
-    printf("%s\n",raspi.uptime);
-    printf("%s\n",raspi.memoria);
-    printf("%s\n",raspi.cpu);
-	printf("%s\n",raspi.hora_actual);
+    printf("Uptime: %s\n",raspi.uptime);
+    printf("Memoria en uso: %s\n",raspi.memoria);
+    printf("Consumo de CPU: %s\n",raspi.cpu);
 
 }
 
@@ -47,9 +47,8 @@ void info_embebido()
 	memset( raspi.uptime, '\0', sizeof(raspi.uptime));
 	memset( raspi.memoria, '\0', sizeof(raspi.memoria));
 	memset( raspi.cpu, '\0', sizeof(raspi.cpu));
-    memset( raspi.hora_actual, '\0', sizeof(raspi.hora_actual));
     
-   // system("rm ./info");
+	//system("rm ./info");
 	strcpy(parameter,"ps -Ao vsize,pcpu,pid | grep ");
 	sprintf(pid,"%i",getpid()); //Obtengo el pid para filtrar el ps
 	strcat(parameter,pid);
@@ -73,6 +72,32 @@ void info_embebido()
 			token=strtok(NULL," ");
 		}
 	}
+
+	printf("Informacion del procesador: \n");
+
+	FILE *cpuinfoFile;
+	cpuinfoFile = fopen ("/proc/cpuinfo", "r");
+
+	if (cpuinfoFile==NULL) {
+		printf("No cpuinfo file found!");
+		fclose(cpuinfoFile);
+		return;
+	}
+
+	while(!feof(cpuinfoFile)) {
+		char *modelCpu;
+		char *procesador;
+		char *lineRead = fgets(buffer, 50, cpuinfoFile);
+
+		if(lineRead==NULL) { break; }
+
+		if((procesador = strstr(lineRead, "processor"))!= NULL)
+			printf("%s \n",procesador);
+
+		if((modelCpu = strstr(lineRead, "model name"))!= NULL)
+			printf("%s \n",modelCpu);
+
+	}	
 
 	dif_hora();
 }
@@ -103,13 +128,5 @@ void dif_hora()
 	strcat(hora,seg);
 	strcpy(raspi.uptime,hora);
 
-	sprintf(min,"%i",tactual->tm_hour);
-	strcat(actual,min);
-	strcat(actual,":");
-	sprintf(min,"%i",tactual->tm_min);
-	strcat(actual,min);
-	strcat(actual,":");
-	sprintf(min,"%i",tactual->tm_sec);
-	strcat(actual,min);
-	strcpy(raspi.hora_actual,actual);
+	printf("\n Fecha y hora actual: \n %s \n", ctime(&tiempo_actual));
 }
