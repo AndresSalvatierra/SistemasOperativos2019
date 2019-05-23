@@ -7,3 +7,7 @@ nano index.lighttpd.html
 wget https://github.com/BlackrockDigital/startbootstrap-agency/archive/gh-pages.zip
 unzip gh-pages.zip
 renombrar archivo
+----- itzgeez -> how to setup virtual hosts in lighttpd
+https://www.cyberciti.biz/faq/howto-lighttpd-virtualhost-configuration/
+copiar archivo de configuracion de lighttpd
+restart
