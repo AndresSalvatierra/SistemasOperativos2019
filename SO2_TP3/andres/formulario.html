@@ -50,35 +50,39 @@
     <div class="container">
       <div class="row">
         <div class="col-lg-12 text-center">
-          <h2 class="section-heading text-uppercase">Contact Us</h2>
-          <h3 class="section-subheading text-muted">Lorem ipsum dolor sit amet consectetur.</h3>
+          <h2 class="section-heading text-uppercase">Lista de archivos disponibles de Goes 16 en AWS</h2>
         </div>
       </div>
       <div class="row">
         <div class="col-lg-12">
-          <form id="contactForm" name="sentMessage" novalidate="novalidate">
-            <div class="row">
-		<div class="col-md-6">
-                <div class="form-group">
-                <form class="form-inline d-flex">
-            	<input type="number" name="year" min="1" max="2019" placeholder="Year">
-            	<input type="number" name="day" min="1" max="366" placeholder="Day">
-         	</form>
-             	</div> 
-	     </div>
-              <div class="col-md-6">
-              </div>
-              <div class="clearfix"></div>
-              <div class="col-lg-12 text-center">
-                <div id="success"></div>
-                <button id="sendMessageButton" class="btn btn-primary btn-xl text-uppercase" type="submit">Send</button>
-              </div>
+          <!----form id="contactForm" name="sentMessage" novalidate="novalidate"-->
+            <!----div class="row">
+		            <div class="col-md-6">
+                  <div class="form-group"-->
+                    <form class="form-inline d-flex" method="get" action="./punto2/formulario.cgi">
+            	        <input type="number" name="year" min="2017" max="2019" placeholder="Año"/>
+            	        <input type="number" name="day" min="1" max="365" placeholder="Día"/>
+         	    	<div class="col-lg-12 text-center">
+		         <button type="submit" class="btn btn-primary btn-xl text-uppercase" onclick="location.reload()" >Send</button>
+			</div>
+			<!--iframe src="./punto2/formulario.cgi" allowtransparency="true"  width="500" height="500"></iframe-->
+		    </form>
+		    <!--div>
+			<iframe src="./punto2/formulario.cgi" allowtransparency="true"  width="500" height="500">
+		    </div-->
+                   </div>
+                  </div> 
+	          <!----/div-->
+              <!----div class="col-md-6">
+              </div-->
+              <!----div class="clearfix"></div-->
             </div>
-          </form>
-        </div>
+          <!----/form-->
+        <!----/div>
       </div>
-    </div>
+    </div-->
   </section>
 
 </body>
 </html>
+
