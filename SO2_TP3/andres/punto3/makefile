@@ -1,7 +1,7 @@
 all: modulos
 
 modulos :
-	gcc -o modulos.cgi modulos.c
+	gcc -Wall -Werror -pedantic -o modulos.cgi modulos.c
 
 clean :
 	rm modulos.cgi \

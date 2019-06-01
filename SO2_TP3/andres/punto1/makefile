@@ -1,7 +1,7 @@
 all: informacion
 
 informacion :
-	gcc -o informacion.cgi informacion.c
+	gcc -Wall -Werror -pedantic -o informacion.cgi informacion.c
 
 clean :
 	rm informacion.cgi \

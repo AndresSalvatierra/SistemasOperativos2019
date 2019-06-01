@@ -1,7 +1,7 @@
 all: formulario
 
 formulario :
-	gcc -o formulario.cgi formulario.c
+	gcc -Wall -Werror -pedantic -o formulario.cgi formulario.c
 
 clean :
 	rm formulario.cgi \
