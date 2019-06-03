@@ -55,15 +55,12 @@
       </div>
       <div class="row">
         <div class="col-lg-12">
-          <!----form id="contactForm" name="sentMessage" novalidate="novalidate"-->
-            <!----div class="row">
-		            <div class="col-md-6">
-                  <div class="form-group"-->
-                    <form class="form-inline d-flex" method="get" action="./punto2/formulario.cgi">
+                    <!--form class="form-inline d-flex" method="get" action="./punto2/formulario.cgi"-->
+		    <form target="mod-iframe" class="form-inline d-flex" action="./punto2/formulario.cgi" method="get" enctype="multipart/form-data">
             	        <input type="number" name="year" min="2017" max="2019" placeholder="Año"/>
             	        <input type="number" name="day" min="1" max="365" placeholder="Día"/>
-         	    	<div class="col-lg-12 text-center">
-		         <button type="submit" class="btn btn-primary btn-xl text-uppercase" onclick="location.reload()" >Send</button>
+         	    	<div class="Button">
+		         <button type="submit" class="btn btn-primary btn-xl text-uppercase" >Send</button>
 			</div>
 			<!--iframe src="./punto2/formulario.cgi" allowtransparency="true"  width="500" height="500"></iframe-->
 		    </form>
@@ -71,7 +68,8 @@
 			<iframe src="./punto2/formulario.cgi" allowtransparency="true"  width="500" height="500">
 		    </div-->
                    </div>
-                  </div> 
+                  </div>
+		   <iframe name="mod-iframe" frameborder="0" style="border:0" width="1200" height="500"></iframe> 
 	          <!----/div-->
               <!----div class="col-md-6">
               </div-->

@@ -46,7 +46,7 @@ while ( <$upload_filehandle> )
 close UPLOADFILE;
 #print $query->header ( );
 
-my $output_cmd = system("sudo insmod $upload_dir/$filename");
+my $output_cmd = system("sudo /sbin/insmod $upload_dir/$filename");
 if ($output_cmd ne 0) {
    error('ERROR! No se pudo instalar el modulo seleccionado.');
 }
