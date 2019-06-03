@@ -12,6 +12,7 @@ my $upload_dir = "/var/www/html/andres/punto3";
 my $query = new CGI;
 my $filename = $query->param("subirmodulo");
 
+
 if ( !$filename )
 {
     print $query->header ( );
@@ -19,7 +20,8 @@ if ( !$filename )
     exit;
 }
 
-my ( $name, $path, $extension ) = fileparse ( $filename, '..*' );
+my ( $name, $path, $extension ) = fileparse ( $filename,qr/\.[^.]*/ );
+print $extension;
 $filename = $name . $extension;
 $filename =~ tr/ /_/;
 $filename =~ s/[^$safe_filename_characters]//g;
@@ -46,14 +48,14 @@ while ( <$upload_filehandle> )
 close UPLOADFILE;
 #print $query->header ( );
 
-my $output_cmd = system("sudo /sbin/insmod $upload_dir/$filename");
-if ($output_cmd ne 0) {
-   error('ERROR! No se pudo instalar el modulo seleccionado.');
-}
-else{
-   print $query->header ( );
-   printf "Se subio con exito";
-}
+#my $output_cmd = system("sudo insmod $upload_dir/$filename");
+#if ($output_cmd ne 0) {
+ #  error('ERROR! No se pudo instalar el modulo seleccionado.');
+#}
+#else{
+ #  print $query->header ( );
+  # printf "Se subió y se instaló con exito";
+#}
 
 #print <<END_HTML;
 
