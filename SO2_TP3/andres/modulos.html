@@ -54,25 +54,24 @@
         </div>
       </div>
       <div class="row">
-       <iframe src="./punto3/modulos.cgi" allowtransparency="true"  width="500" height="500">
+       <iframe src="./punto3/modulos.cgi" allowtransparency="true" frameborder="0" style="border:0"  width="600" height="600">
        </iframe>
       </div>
       <div class="row">
 	<div class="col-lg-12">
 	 <!--p class="text-black-50 mb-0">Eliga el modulo que desea instalar o desinstalar</p-->
          <hr class="my-4">
-	    <form target="mod-iframe" action="./punto3/subir_mod.cgi" method="post" enctype="multipart/form-data">           
-	      <input type="file" class="btn btn-primary mx-auto" name="subirmodulo">
-	      <div class="row">
-		 <label for="subirmodulo"> Eliga el modulo que desea cargar o remover</label>
-	      </div>
-              <button type="submit" class="btn btn-primary mx-auto">Instalar modulo</button>
-              <hr class="my-4">
-            </form>  	
-	<iframe name="mod-iframe" allowtransparency="true" frameborder="0" width="300" height="50"></iframe>
-	    <!--/form>
-	<!--a class="btn btn-primary btn-xl text-uppercase js-scroll-trigger" href="modulos.html">Install</a>
-         <a class="btn btn-primary btn-xl text-uppercase js-scroll-trigger" href="modulos.html">Remove</a-->
+	    <form target="mod-iframe" method="post" action="./punto3/subir_mod.cgi" enctype="multipart/form-data" class="form-inline d-flex">           
+         	 <input type="file" class="btn btn-primary mx-auto" name="subirmodulo">
+		 <label for="subirmodulo"> Eliga el modulo que desea cargar</label>
+	         <button type="submit" class="btn btn-primary mx-auto" >Instalar modulo</button>
+	     </form>
+	     <form target="mod-iframe" enctype="multipart/form-data" class="form-inline d-flex" action="./punto3/rm_mod.cgi">
+	        <input type="file" class="btn btn-primary mx-auto" name="rm_modulo">
+		<label for="subirmodulo"> Eliga el modulo que desea remover</label>
+		<button type="submit" class="btn btn-primary mx-auto">Remover modulo</button>
+             </form-->
+	<iframe name="mod-iframe" allowtransparency="true" frameborder="0" style="border:0" width="500" height="100"></iframe>
 	</div>
       </div>
   </section>

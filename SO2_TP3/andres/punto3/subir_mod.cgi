@@ -21,7 +21,11 @@ if ( !$filename )
 }
 
 my ( $name, $path, $extension ) = fileparse ( $filename,qr/\.[^.]*/ );
-print $extension;
+
+if ($extension ne ".ko") {
+    error("Usted no ha ingresado un modulo con la extension incorrecta");
+} 
+
 $filename = $name . $extension;
 $filename =~ tr/ /_/;
 $filename =~ s/[^$safe_filename_characters]//g;
@@ -46,31 +50,21 @@ while ( <$upload_filehandle> )
 }
 
 close UPLOADFILE;
-#print $query->header ( );
 
-#my $output_cmd = system("sudo insmod $upload_dir/$filename");
-#if ($output_cmd ne 0) {
- #  error('ERROR! No se pudo instalar el modulo seleccionado.');
-#}
-#else{
- #  print $query->header ( );
-  # printf "Se subió y se instaló con exito";
-#}
+my $output_cmd = system("sudo insmod $upload_dir/$filename");
+if ($output_cmd ne 0) {
+  error('ERROR! No se pudo instalar el modulo seleccionado.');
+}
+else{
+  print $query->header ( );
 
-#print <<END_HTML;
+  printf "Se subio y se instalo con exito";
+}
 
-#<DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "DTD/xhtml1-strict.dtd">
-#<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-    #<head>
-       # <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-       # <title>Thanks!</title>
-       # <style type="text/css">
-      #      img {border: none;}
-     #   </style>
-    #</head>
-
-   # <body>
-  #      <p>Thanks for uploading your photo!</p>
- #   </body>
-#</html>
-#END_HTML
+sub error {
+   print $query->header(),
+         $query->start_html(-title=>'Error'),
+         shift,
+         $query->end_html;
+   exit(0);
+}
