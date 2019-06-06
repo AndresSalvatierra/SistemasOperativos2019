@@ -45,7 +45,7 @@ if ($filename =~ /^([$filename_characters]+)$/) {
    $filename = $1;
 }
 else{
-   error("The filename is not valid. Filenames can only contain these characters: $filename_characters")
+   error("El archivo es invalido, puede contener caracteres invalidos")
 }
  
 my $output_cmd = system("sudo rmmod $filename");

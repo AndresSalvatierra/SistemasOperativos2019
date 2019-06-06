@@ -16,7 +16,7 @@ my $filename = $query->param("subirmodulo");
 if ( !$filename )
 {
     print $query->header ( );
-    print "There was a problem uploading your photo (try a smaller file).";
+    print "Hay un problema al subir el archivo";
     exit;
 }
 
@@ -36,7 +36,7 @@ if ( $filename =~ /^([$safe_filename_characters]+)$/ )
 }
 else
 {
-    die "Filename contains invalid characters";
+    die "El archivo contiene caracteres invalidos";
 }
 
 my $upload_filehandle = $query->upload("subirmodulo");
@@ -53,7 +53,7 @@ close UPLOADFILE;
 
 my $output_cmd = system("sudo insmod $upload_dir/$filename");
 if ($output_cmd ne 0) {
-  error('ERROR! No se pudo instalar el modulo seleccionado.');
+  error('Error!  No se pudo instalar el modulo seleccionado.');
 }
 else{
   print $query->header ( );
