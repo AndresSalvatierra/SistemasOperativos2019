@@ -16,14 +16,15 @@ my $filename = $query->param("subirmodulo");
 if ( !$filename )
 {
     print $query->header ( );
-    print "Hay un problema al subir el archivo";
+    print( "Hay un problema al subir el archivo");
     exit;
 }
 
 my ( $name, $path, $extension ) = fileparse ( $filename,qr/\.[^.]*/ );
 
 if ($extension ne ".ko") {
-    error("Usted no ha ingresado un modulo con la extension incorrecta");
+    print("Usted ha ingresado un modulo con la extension incorrecta");
+    exit;
 } 
 
 $filename = $name . $extension;
@@ -51,20 +52,11 @@ while ( <$upload_filehandle> )
 
 close UPLOADFILE;
 
+system ("sudo dmesg -C");
 my $output_cmd = system("sudo insmod $upload_dir/$filename");
 if ($output_cmd ne 0) {
-  error('Error!  No se pudo instalar el modulo seleccionado.');
+  die('No se pudo instalar el modulo seleccionado.');
 }
 else{
-  print $query->header ( );
-
-  printf "Se subio y se instalo con exito";
-}
-
-sub error {
-   print $query->header(),
-         $query->start_html(-title=>'Error'),
-         shift,
-         $query->end_html;
-   exit(0);
+  printf( system("dmesg"));
 }
