@@ -1,2 +1,5 @@
 SO2_TP1/.vscode/
-
+SO2_TP2/.vscode/
+SO2_TP2/tierra.nc
+SO2_TP2/tierra_conv.nc
+SO2_TP2/install_netcdf4.sh
